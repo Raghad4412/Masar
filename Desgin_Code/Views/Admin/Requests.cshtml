@@ -1,0 +1,48 @@
+@model Masar.ViewModels.Admin.AdminRequestsViewModel
+@{
+    Layout = "~/Views/Shared/_Dash.cshtml";
+    ViewData["panel"] = "admin";
+    ViewData["dmeCaption"] = Model.DmeCaption;
+    ViewData["title"] = "Requests - Masar";
+    ViewData["dtitle"] = "Requests";
+    ViewData["dcrumb"] = "Requests";
+}
+@{
+    var tabs = new List<TabLink>();
+    foreach (var (key, label) in new Dictionary<string, string> { ["all"] = "All", ["Open"] = "Open", ["In Progress"] = "In progress", ["Completed"] = "Completed", ["Closed"] = "Closed", ["Cancelled"] = "Cancelled" })
+    {
+        tabs.Add(new TabLink
+        {
+            Label = label,
+            Count = Model.Counts[key],
+            Url = key == "all" ? Routes.To("admin.requests") : Routes.To("admin.requests", new { status = key }),
+            On = key == "all" ? string.IsNullOrEmpty(Model.Status) : Model.Status == key,
+        });
+    }
+}
+@{ Func<object?, IHtmlContent> slot1 = @<text>
+  @if (Model.Rows.Any())
+{
+    foreach (var row in Model.Rows)
+    {
+<text>
+    <tr>
+      <td><b>@(row.Title)</b><br><span class="m-small">@(row.Reference)</span></td>
+      <td><div class="who">@await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = row.Client?.User, Box = "ava ava-sm", Fallback = "av av-sm" })<span>@(row.Client?.User?.FullName)</span></div></td>
+      <td class="nw">@(row.FieldName())<br><span class="m-small">@(row.Type?.ServicePackge)</span></td>
+      <td class="nw">@(row.BudgetDisplay)</td>
+      <td class="nw">@(row.Deadline.Format("j M Y"))</td>
+      <td>@(row.Proposals.Count())</td>
+      <td>@await Html.PartialAsync("~/Views/Components/_Status.cshtml", new StatusModel { Kind = "request", Value = row.Status })</td>
+    </tr>
+  </text>
+    }
+}
+else
+{
+<text>
+    <tr><td colspan="7"><p class="m-body" style="padding:18px 0">No request matches this filter.</p></td></tr>
+  </text>
+}
+</text>; }
+@await Html.PartialAsync("~/Views/Components/_AdminTable.cshtml", new AdminTableModel { Pager = Model.Pager, Unit = "request", Title = "Service requests", Note = "Every request clients have posted", Tabs = tabs, Head = new List<HeadCell> { new HeadCell { Label = "Request" }, new HeadCell { Label = "Client" }, new HeadCell { Label = "Package" }, new HeadCell { Label = "Budget" }, new HeadCell { Label = "Deadline" }, new HeadCell { Label = "Proposals" }, new HeadCell { Label = "Status" } }, Slot = slot1(null) })

@@ -1,0 +1,109 @@
+@model Masar.ViewModels.Client.ProposalShowViewModel
+@{
+    Layout = "~/Views/Shared/_App.cshtml";
+    ViewData["navItem"] = "requests";
+    ViewData["title"] = "Proposal from " + Model.User.FullName + " - Masar";
+}
+@section Crumb {
+
+  <span>Home</span><i class="bi bi-chevron-right"></i><a href="@(Routes.To("requests.index"))">My Requests</a><i class="bi bi-chevron-right"></i><a href="@(Routes.To("requests.show", new { serviceRequest = Model.Request.ServiceRequestId }))">@(Model.Request.RequestReference)</a><i class="bi bi-chevron-right"></i><span class="cur">Proposal</span>
+
+}
+
+<div class="wrap">
+  <div class="bcols">
+    <section>
+      <div class="card pad">
+        <div class="pc-head" style="margin-bottom:22px">
+          <span class="ec-pic">@await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = Model.User, Box = "ava ava-xl", Fallback = "av av-xl" })<i class="bi bi-patch-check-fill badge-v"></i></span>
+          <div>
+            <h2 class="m-h2" style="font-size:24px">@(Model.User.FullName)</h2>
+            <p class="m-body">@(Model.Expert.Specialization) &middot; @(Model.User.City) &middot; @(Model.Expert.ExperienceYears) years of experience</p>
+            <div class="ec-rate" style="border:0;padding:8px 0 0">@if (Helpers.Truthy(Model.Expert.Rating))
+{
+<text>@await Html.PartialAsync("~/Views/Components/_Stars.cshtml", new StarsModel { Rating = Model.Expert.Rating }) <b>@(Helpers.NumberFormat(Convert.ToDouble(Model.Expert.Rating), 1))</b>
+              <span class="m-small">(@(Model.Reviews) @(Helpers.Plural("review", Model.Reviews)))</span></text>
+} <span class="m-chip chip-ok"><i class="bi bi-patch-check-fill"></i> Verified</span></div>
+          </div>
+        </div>
+        <h3 class="m-h3">Scope of work</h3>
+        <ul class="scope big" style="margin-top:12px">
+          @foreach (var line in Model.Proposal.ScopeLines)
+{
+<text><li><i class="bi bi-check2"></i> @(line)</li></text>
+}
+        </ul>
+        @if (Model.Related.Any())
+{
+<text>
+          <h3 class="m-h3" style="margin-top:26px">Related work</h3>
+          <div class="pgrid">
+            @foreach (var item in Model.Related)
+{
+<text>
+              <figure class="pitem"><img src="@(item.Image)" alt="@(item.Title)"><figcaption>@(item.Title)</figcaption></figure>
+            </text>
+}
+          </div>
+        </text>
+}
+      </div>
+    </section>
+    <aside>
+      <div class="card pad">
+        @if (Model.Proposal.IsNew())
+{
+<text><span class="m-chip chip-new">New proposal</span></text>
+}
+else
+{
+<text>@await Html.PartialAsync("~/Views/Components/_Status.cshtml", new StatusModel { Kind = "proposal", Value = Model.Proposal.ProposalStatus })</text>
+}
+        <div class="price-big" style="margin-top:14px">@(Helpers.Sar(Model.Proposal.ProposalPrice, 0)) <span>SAR</span></div>
+        <div class="pl"><span>Delivery time</span><span>@(Model.Proposal.DeliveryTime) days</span></div>
+        <div class="pl"><span>Received</span><span>@(Model.SentAt.Format("j M, H:i"))</span></div>
+        <div class="pl" style="border:0"><span>Valid until</span><span>@(Model.Proposal.ExpirationTime.Format("j M Y"))</span></div>
+        @if ((Model.Proposal.ProposalStatus == "Waiting") && (Model.Request.Status == "Open"))
+{
+<text>
+          <a href="@(Routes.To("proposals.accept", new { proposal = Model.Proposal.ProposalId }))" class="m-btn m-btn-primary m-btn-block" style="margin-top:18px">Accept this proposal</a>
+          <button type="button" class="m-btn m-btn-outline m-btn-block" style="margin-top:10px" disabled title="Chat opens after you accept">Message @(Model.User.FirstName)</button>
+          <a class="m-link" href="#" data-ms-open="ms-reject" style="margin-top:14px;justify-content:center;width:100%">Reject the proposal</a>
+        </text>
+}
+      </div>
+      <div class="card pad" style="margin-top:18px">
+        <h4 class="m-h4">You are protected</h4>
+        <div class="tip"><i class="bi bi-shield-check"></i> The money is released only when you mark the service completed.</div>
+        <div class="tip"><i class="bi bi-receipt"></i> A tax invoice is issued for every payment.</div>
+        <div class="tip"><i class="bi bi-chat-dots"></i> All files and chat stay inside your request.</div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+@section Dialogs {
+
+@if ((Model.Proposal.ProposalStatus == "Waiting") && (Model.Request.Status == "Open"))
+{
+<text>
+  <div class="ms-dialog" id="ms-reject" hidden>
+    <form class="card pad" style="width:520px" method="POST" action="@(Routes.To("proposals.reject", new { proposal = Model.Proposal.ProposalId }))">
+      @Html.AntiForgeryToken()
+      <h3 class="m-h3">Reject this proposal?</h3>
+      <p class="m-body" style="margin-top:10px">@(Model.User.FirstName) is told the proposal was not chosen.
+        The request stays open for the other experts.</p>
+      <div class="m-fg" style="margin-top:18px">
+        <label class="m-label" for="reject-reason">Reason <span class="opt">Optional</span></label>
+        <div class="m-input area"><textarea id="reject-reason" name="reason" maxlength="300" placeholder="Helpful feedback for the expert."></textarea></div>
+      </div>
+      <div class="d-flex gap-3" style="margin-top:20px;justify-content:flex-end">
+        <button type="button" class="m-btn m-btn-outline" data-ms-close>Keep it</button>
+        <button type="submit" class="m-btn m-btn-primary">Reject the proposal</button>
+      </div>
+    </form>
+  </div>
+</text>
+}
+
+}

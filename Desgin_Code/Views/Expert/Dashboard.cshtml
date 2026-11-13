@@ -1,0 +1,202 @@
+@model Masar.ViewModels.ExpertArea.ExpertDashboardViewModel
+@{
+    Layout = "~/Views/Shared/_Dash.cshtml";
+    ViewData["panel"] = "expert";
+    ViewData["dmeCaption"] = Model.DmeCaption;
+    ViewData["title"] = "Dashboard - Masar";
+    ViewData["dtitle"] = "Dashboard";
+    ViewData["dcrumb"] = "Dashboard";
+}
+@section DtopAction {
+
+  <a href="@(Routes.To("expert.requests"))" class="m-btn m-btn-primary m-btn-sm"><i class="bi bi-plus-lg"></i> New proposal</a>
+
+}
+
+@{
+    string delta(IList<double> series, string suffix = "%")
+    {
+        var n = series.Count;
+        var now = n >= 1 ? series[n - 1] : 0.0;
+        var before = n >= 2 ? series[n - 2] : 0.0;
+        int change;
+        if (before == 0.0)
+        {
+            change = now > 0 ? 100 : 0;
+        }
+        else
+        {
+            change = (int)Math.Round((now - before) / Math.Abs(before) * 100, MidpointRounding.AwayFromZero);
+        }
+
+        var cls = change > 0 ? "" : (change < 0 ? "dn" : "flat");
+        var icon = change > 0 ? "bi-arrow-up-right" : (change < 0 ? "bi-arrow-down-right" : "bi-dash");
+
+        return "<span class=\"delta " + cls + "\"><i class=\"bi " + icon + "\"></i> "
+            + (change == 0 ? "no change" : Math.Abs(change) + suffix) + "</span>";
+    }
+}
+
+<div class="dhero">
+  <span class="rings"></span><span class="rings2"></span>
+  <div style="position:relative">
+    <span class="eb">@(Clock.Now.Format("l, j F Y"))</span>
+    <h2>@(Clock.Now.Hour < 12 ? "Good morning" : (Clock.Now.Hour < 18 ? "Good afternoon" : "Good evening")), @(Model.User.FirstName)</h2>
+    <p>@(Model.OpenRequests) open @(Helpers.Plural("request", Model.OpenRequests)) match @(Model.Expert.Specialization),
+      and you have @(Model.ActiveServices.Count()) @(Helpers.Plural("service", Model.ActiveServices.Count())) in progress.
+      @(Helpers.Truthy(Model.Upcoming.Count()) ? "Your next call is " + Model.Upcoming.FirstOrDefault().StartsAt().DiffForHumans() + "." : "No calls are booked yet.")</p>
+  </div>
+  <div class="acts">
+    <a href="@(Routes.To("expert.schedule"))" class="m-btn m-btn-outline"><i class="bi bi-calendar3"></i> My week</a>
+    <a href="@(Routes.To("expert.requests"))" class="m-btn m-btn-primary"><i class="bi bi-inbox"></i> Browse open requests</a>
+  </div>
+</div>
+<div class="kpis">
+  <div class="kpi">
+    <div class="kpi-t"><span class="kpi-ic "><i class="bi bi-wallet2"></i></span>
+      <span class="kpi-l">Earnings this month</span></div>
+    <div class="kpi-v">@(Helpers.Sar(Model.EarningsThisMonth, 0)) <span>SAR</span></div>
+    <div class="kpi-b">@Html.Raw(delta(Model.Sparklines.Earnings))@Html.Raw(C.Sparkline(Model.Sparklines.Earnings, C.TEAL, "s1"))</div>
+    <p class="m-small" style="margin-top:10px">After the @(Helpers.ToInt32((Config.Masar.Commission * 100)))% commission, from @(Helpers.Sar(Model.BilledThisMonth, 0)) SAR billed</p>
+  </div>
+  <div class="kpi">
+    <div class="kpi-t"><span class="kpi-ic blue"><i class="bi bi-briefcase"></i></span>
+      <span class="kpi-l">Active services</span></div>
+    <div class="kpi-v">@(Model.ActiveServices.Count())</div>
+    <div class="kpi-b">@Html.Raw(delta(Model.Sparklines.Services))@Html.Raw(C.Sparkline(Model.Sparklines.Services, C.INFO, "s2"))</div>
+    <p class="m-small" style="margin-top:10px">@(Helpers.Sar(Model.AgreedTotal, 0)) SAR agreed with clients</p>
+  </div>
+  <div class="kpi">
+    <div class="kpi-t"><span class="kpi-ic green"><i class="bi bi-graph-up-arrow"></i></span>
+      <span class="kpi-l">Proposal win rate</span></div>
+    <div class="kpi-v">@(Model.Win.Rate) <span>%</span></div>
+    <div class="kpi-b">@Html.Raw(delta(Model.Sparklines.Win, " pts"))@Html.Raw(C.Sparkline(Model.Sparklines.Win, C.SAGE, "s3"))</div>
+    <p class="m-small" style="margin-top:10px">@(Model.Win.Accepted) of @(Model.Win.Total) proposals accepted</p>
+  </div>
+  <div class="kpi">
+    <div class="kpi-t"><span class="kpi-ic gold"><i class="bi bi-star-fill"></i></span>
+      <span class="kpi-l">Client rating</span></div>
+    <div class="kpi-v">@(Helpers.Truthy(Model.Rating) ? Helpers.NumberFormat(Convert.ToDouble(Model.Rating), 1) : "-") <span>/ 5</span></div>
+    <div class="kpi-b">@Html.Raw(delta(Model.Sparklines.Rating, " pts"))@Html.Raw(C.Sparkline(Model.Sparklines.Rating, C.AMBER, "s4"))</div>
+    <p class="m-small" style="margin-top:10px">@(Model.ReviewCount) @(Helpers.Plural("review", Model.ReviewCount)), @(Model.FiveStarShare)% of them five stars</p>
+  </div>
+</div>
+<div class="d2">
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Earnings</h3><p class="m-small">What reaches you, after the @(Helpers.ToInt32((Config.Masar.Commission * 100)))% Masar commission</p></div><div class="sp"><span class="seg"><span>3M</span><span class="on">8M</span><span>12M</span></span>
+      <a href="@(Routes.To("expert.earnings"))" class="m-link">Export <i class="bi bi-download"></i></a></div></div>
+  <div class="dcb ">@Html.Raw(C.Area(Model.EarningsByMonth.Keys.ToList(), Model.EarningsByMonth.Values.ToList(), "g5", Model.EarningsByMonth.Keys.LastOrDefault(), Helpers.Sar(Model.EarningsByMonth.Values.Last(), 0) + " SAR"))
+    <div class="chartfoot">
+      <div><span class="m-small">Received in @(Clock.Now.Year)</span><b>@(Helpers.Sar(Model.ReceivedThisYear, 0)) SAR</b></div>
+      <div><span class="m-small">Billed to clients</span><b>@(Helpers.Sar(Model.BilledThisYear, 0)) SAR</b></div>
+      <div><span class="m-small">Masar commission @(Helpers.ToInt32((Config.Masar.Commission * 100)))%</span><b>-@(Helpers.Sar(Model.CommissionThisYear, 0)) SAR</b></div>
+      <div><span class="m-small">Next payout</span><b>@(Model.NextPayout.Format("j M Y"))</b></div>
+    </div></div>
+</div>
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Proposal outcomes</h3><p class="m-small">Last 90 days</p></div></div>
+  <div class="dcb p"><div class="center">@Html.Raw(C.Donut(new List<(double Value, string Color)> { ((double)(Model.Outcomes.Accepted), "#024940"), ((double)(Model.Outcomes.Waiting), "#8BA894"), ((double)(Model.Outcomes.Declined), "#DCEAE1") }, Convert.ToString(Helpers.ArraySum(Model.Outcomes)), "proposals"))</div>
+    <div class="don-leg">
+      <div><em style="background:#024940"></em> Accepted <b>@(Model.Outcomes.Accepted)</b></div>
+      <div><em style="background:#8BA894"></em> Waiting for the client <b>@(Model.Outcomes.Waiting)</b></div>
+      <div><em style="background:#DCEAE1"></em> Declined <b>@(Model.Outcomes.Declined)</b></div>
+    </div>
+    <div class="note" style="margin-top:18px"><i class="bi bi-lightbulb"></i>
+      A proposal is valid for @(Config.Masar.ProposalValidityDays) days, so answer early.</div></div>
+</div>
+</div>
+<div class="d2">
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Next on your calendar</h3><p class="m-small">Calls with your clients</p></div><div class="sp"><a href="@(Routes.To("expert.schedule"))" class="m-link">Open calendar <i class="bi bi-arrow-right"></i></a></div></div>
+  <div class="dcb "><div>
+      @if (Model.Upcoming.Any())
+{
+    foreach (var session in Model.Upcoming)
+    {
+<text>
+        <a class="dli" href="@(Routes.To("expert.session.show", new { session = session.ConsultationSessionId }))">@await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = session.Client?.User, Box = "ava ava-sm", Fallback = "av av-sm" })<div><b>@(session.Client?.User?.FullName)</b><p class="m-small">@(session.SessionTopic)</p></div>
+          <span class="tm">@(session.SlotLabel)<span>@(session.StartsAt().IsToday() ? "Today" : session.StartsAt().Format("D j M")), @(Config.Masar.SessionMinutes) min</span></span></a>
+      </text>
+    }
+}
+else
+{
+<text>
+        
+        @if (Model.ActiveServices.Any())
+{
+    foreach (var service in Model.ActiveServices)
+    {
+<text>
+          <a class="dli" href="@(Routes.To("expert.service.show", new { serviceRequest = service.ServiceRequestId }))"><span class="slotic"><i class="bi bi-box-seam"></i></span>
+            <div><b>@(service.Client?.User?.FullName)</b><p class="m-small">@(service.Title)</p></div>
+            <span class="tm">@(service.DeliveryDate?.Format("j M"))<span>Delivery, @(service.Reference)</span></span></a>
+        </text>
+    }
+}
+else
+{
+<text>
+          <p class="m-small" style="padding:18px 0">Nothing is due yet. Send a proposal on an open request to start a service.</p>
+        </text>
+}
+      </text>
+}
+    </div></div>
+</div>
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Activity</h3><p class="m-small">Everything that happened on your account</p></div></div>
+  <div class="dcb "><div class="feed">
+      @if (Model.Activity.Any())
+{
+    foreach (var @event in Model.Activity)
+    {
+<text>
+        <div class="fev"><span class="fd @(@event.Tone)"><i class="bi @(@event.Icon)"></i></span>
+          <div><p>@(@event.Text)</p><span class="ago">@(@event.At.DiffForHumans())</span></div></div>
+      </text>
+    }
+}
+else
+{
+<text>
+        <p class="m-small">Nothing has happened on your account yet.</p>
+      </text>
+}
+    </div></div>
+</div>
+</div>
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Active services</h3><p class="m-small">Work you are delivering right now</p></div><div class="sp"><a href="@(Routes.To("expert.services"))" class="m-link">All services <i class="bi bi-arrow-right"></i></a></div></div>
+  <div class="dcb t"><div class="md-table-scroll"><table class="dt2">
+    <tr><th>Service</th><th>Client</th><th class="r">Value</th><th>Progress</th><th>Deadline</th>
+      <th>Status</th><th></th></tr>
+    @if (Model.ActiveServices.Any())
+{
+    foreach (var service in Model.ActiveServices)
+    {
+<text>
+      @{
+    var span = Math.Max(1, Helpers.Or(service.Deadline.DiffInDays(Helpers.Or(service.DeliveryDate, service.Deadline)), 1));
+    var done = Helpers.Truthy(service.DeliveryDate) ? Math.Max(0, Math.Min(100, Helpers.ToInt32(Helpers.Round(Clock.Now.DiffInDays(service.DeliveryDate, false) < 0 ? 100 : (1 - Clock.Now.DiffInDays(service.DeliveryDate, false) / Math.Max(1, span)) * 100)))) : 0;
+}
+      <tr>
+        <td><b>@(service.Title)</b><br><span class="m-small">@(service.Reference)</span></td>
+        <td><div class="who">@await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = service.Client?.User, Box = "ava ava-sm", Fallback = "av av-sm" })<span>@(service.Client?.User?.FullName)</span></div></td>
+        <td class="r"><b>@(Helpers.Sar(service.AgreedPrice, 0)) SAR</b></td>
+        <td><div class="tprog"><div class="tr"><i style="width:@(done)%"></i></div><b>@(done)%</b></div></td>
+        <td class="nw">@(service.Deadline.Format("j M Y"))</td>
+        <td>@await Html.PartialAsync("~/Views/Components/_Status.cshtml", new StatusModel { Kind = "request", Value = service.Status })</td>
+        <td class="r"><a class="m-link" href="@(Routes.To("expert.service.show", new { serviceRequest = service.ServiceRequestId }))">Open</a></td>
+      </tr>
+    </text>
+    }
+}
+else
+{
+<text>
+      <tr><td colspan="7"><p class="m-body" style="padding:18px 0">You have no running services. Send a proposal on an open request to start one.</p></td></tr>
+    </text>
+}
+  </table></div></div>
+</div>

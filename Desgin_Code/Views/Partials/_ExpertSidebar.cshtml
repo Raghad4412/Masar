@@ -1,0 +1,68 @@
+@{
+    var me = AuthUser;
+    var ex = me.Expert;
+    var nav = Service<StatsService>().ExpertNavCounts(ex);
+}
+<aside class="dsb">
+  <div class="dsb-brand">
+    <span class="tile"><img src="@(Routes.Asset("img/masar-mark.png"))" alt="Masar"></span>
+    <span class="nm"><span class="w">MASAR</span><span class="t">Expert workspace</span></span>
+    
+    <button type="button" class="dsb-fold" data-ms-rail aria-label="Fold the menu" aria-expanded="true">
+      <i class="bi bi-chevron-double-left"></i>
+    </button>
+  </div>
+  <div class="dsb-sec">Workspace</div>
+  <div class="dnav">
+    <a href="@(Routes.To("expert.dashboard"))" class="@Css.Classes(("on", Http.RouteIs("expert.dashboard")))"><span class="ic"><i class="bi bi-speedometer2"></i></span><span class="lb">Dashboard</span></a>
+    @if (!ex.IsConsultant())
+{
+<text>
+      <a href="@(Routes.To("expert.requests"))" class="@Css.Classes(("on", (Http.RouteIs("expert.requests") || Http.RouteIs("expert.proposal.create")) || Http.RouteIs("expert.proposal.store")))"><span class="ic"><i class="bi bi-inbox"></i></span><span class="lb">Open Requests</span>@if (Helpers.Truthy(nav.Open))
+{
+<text><span class="n">@(nav.Open)</span></text>
+}</a>
+      <a href="@(Routes.To("expert.proposals"))" class="@Css.Classes(("on", Http.RouteIs("expert.proposals")))"><span class="ic"><i class="bi bi-file-earmark-text"></i></span><span class="lb">My Proposals</span>@if (Helpers.Truthy(nav.Waiting))
+{
+<text><span class="n">@(nav.Waiting)</span></text>
+}</a>
+      <a href="@(Routes.To("expert.services"))" class="@Css.Classes(("on", Http.RouteIs("expert.services")))"><span class="ic"><i class="bi bi-briefcase"></i></span><span class="lb">My Services</span>@if (Helpers.Truthy(nav.Services))
+{
+<text><span class="n">@(nav.Services)</span></text>
+}</a>
+    </text>
+}
+else
+{
+<text>
+      <a href="@(Routes.To("expert.schedule"))" class="@Css.Classes(("on", Http.RouteIs("expert.schedule")))"><span class="ic"><i class="bi bi-calendar3"></i></span><span class="lb">Bookings</span>@if (Helpers.Truthy(nav.Upcoming))
+{
+<text><span class="n">@(nav.Upcoming)</span></text>
+}</a>
+    </text>
+}
+    <a href="@(Routes.To("expert.messages"))" class="@Css.Classes(("on", Http.RouteIs("expert.messages")))"><span class="ic"><i class="bi bi-chat-dots"></i></span><span class="lb">Messages</span>@if (Helpers.Truthy(nav.Chats))
+{
+<text><span class="n">@(nav.Chats)</span></text>
+}</a>
+    </div>
+  <div class="dsb-sec">Business</div>
+  <div class="dnav">
+    <a href="@(Routes.To("expert.earnings"))" class="@Css.Classes(("on", Http.RouteIs("expert.earnings")))"><span class="ic"><i class="bi bi-wallet2"></i></span><span class="lb">Earnings and Payouts</span></a>
+    <a href="@(Routes.To("expert.performance"))" class="@Css.Classes(("on", Http.RouteIs("expert.performance")))"><span class="ic"><i class="bi bi-graph-up-arrow"></i></span><span class="lb">Performance</span></a>
+    <a href="@(Routes.To("expert.reviews"))" class="@Css.Classes(("on", Http.RouteIs("expert.reviews")))"><span class="ic"><i class="bi bi-star"></i></span><span class="lb">Reviews</span></a>
+    </div>
+  <div class="dsb-sec">Account</div>
+  <div class="dnav">
+    <a href="@(Routes.To("expert.profile"))" class="@Css.Classes(("on", Http.RouteIs("expert.profile") || Http.RouteIs("expert.portfolio*")))"><span class="ic"><i class="bi bi-person-badge"></i></span><span class="lb">Profile and Verification</span></a>
+    <a href="@(Routes.To("expert.availability"))" class="@Css.Classes(("on", Http.RouteIs("expert.availability")))"><span class="ic"><i class="bi bi-clock-history"></i></span><span class="lb">Availability</span></a>
+    <a href="@(Routes.To("expert.settings"))" class="@Css.Classes(("on", Http.RouteIs("expert.settings")))"><span class="ic"><i class="bi bi-gear"></i></span><span class="lb">Settings</span></a>
+  </div>
+  <div class="dsb-foot">
+    <div class="dsb-card">
+      <div class="dsb-me">@await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = me, Box = "ava ava-sm" })<div><b>@(me.FullName)</b><span>@(ex.IsVerified() ? "Verified expert" : "Waiting for verification")</span></div></div>
+      <div class="dsb-bar"><i style="width:@(nav.Strength)%"></i></div>
+      <p>Profile strength <b>@(nav.Strength)%</b></p>
+    </div>
+  </div>
+</aside>

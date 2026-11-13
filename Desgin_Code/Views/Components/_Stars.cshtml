@@ -1,0 +1,44 @@
+@model StarsModel
+@{
+    var rating = Model.Rating;
+    var size = Model.Size;
+    var @class = Model.Class;
+    var bare = Model.Bare;
+}
+@{
+    var r = Math.Max(0, Math.Min(5, Convert.ToDouble(rating)));
+    var full = Helpers.ToInt32(Math.Floor(Convert.ToDouble(r)));
+    var half = (r - full) >= 0.1 ? 1 : 0;
+    var empty = 5 - full - half;
+}
+@if (bare)
+{
+<text>
+@for (var i = 0; i < full; i++)
+{
+<text><i class="bi bi-star-fill"></i></text>
+}@if (Helpers.Truthy(half))
+{
+<text><i class="bi bi-star-half"></i></text>
+}@for (var i = 0; i < empty; i++)
+{
+<text><i class="bi bi-star"></i></text>
+}
+</text>
+}
+else
+{
+<text>
+<span class="@(@class)" @Html.Raw((Helpers.Truthy(size) ? " style=\"font-size:" + E(size) + "\" " : ""))
+  >@for (var i = 0; i < full; i++)
+{
+<text><i class="bi bi-star-fill"></i></text>
+}@if (Helpers.Truthy(half))
+{
+<text><i class="bi bi-star-half"></i></text>
+}@for (var i = 0; i < empty; i++)
+{
+<text><i class="bi bi-star"></i></text>
+}</span>
+</text>
+}

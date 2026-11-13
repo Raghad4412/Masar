@@ -1,0 +1,101 @@
+@model Masar.ViewModels.Client.RequestCompareViewModel
+@{
+    Layout = "~/Views/Shared/_App.cshtml";
+    ViewData["navItem"] = "requests";
+    ViewData["title"] = "Compare proposals - Masar";
+}
+@section Crumb {
+
+  <span>Home</span><i class="bi bi-chevron-right"></i><a href="@(Routes.To("requests.index"))">My Requests</a><i class="bi bi-chevron-right"></i><a href="@(Routes.To("requests.show", new { serviceRequest = Model.Request.ServiceRequestId }))">@(Model.Request.RequestReference)</a><i class="bi bi-chevron-right"></i><span class="cur">Compare</span>
+
+}
+
+<div class="wrap">
+  <div class="page-h">
+    <div><h1 class="m-h1">Compare proposals</h1><p class="m-body">@(Model.Proposals.Count()) @(Helpers.Plural("proposal", Model.Proposals.Count())) on @(Model.Request.RequestReference)</p></div>
+    <a href="@(Routes.To("requests.show", new { serviceRequest = Model.Request.ServiceRequestId }))" class="m-btn m-btn-outline"><i class="bi bi-arrow-left"></i> Back to the request</a>
+  </div>
+  @if (!Model.Proposals.Any())
+{
+<text>
+    <div class="empty" style="padding:48px 36px">
+      @await Html.PartialAsync("~/Views/Svg/_EmptyProposals.cshtml")
+      <h3 class="m-h3" style="margin-top:20px">No proposals to compare yet</h3>
+      <p class="m-body" style="max-width:430px;margin:10px auto 0">As soon as two experts have answered,
+        you can put their offers side by side here.</p>
+    </div>
+  </text>
+}
+else
+{
+<text>
+    <div class="card">
+      <div class="md-table-scroll">
+      <table class="cmp">
+        <tr>
+          <th></th>
+          @foreach (var proposal in Model.Proposals)
+{
+<text>
+            @{
+    var best = Helpers.Truthy(Model.BestValue) && (Model.BestValue.ProposalId == proposal.ProposalId);
+}
+            <th class="@(Helpers.Truthy(best) ? "best" : "")">@if (Helpers.Truthy(best))
+{
+<text><span class="ribbon">Best value</span></text>
+}<div class="cmp-ex">@await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = proposal.Expert.User, Box = "ava ava-lg", Fallback = "av av-lg" })<b>@(proposal.Expert.User.FullName)</b><span class="m-small">@(proposal.Expert.Specialization) &middot; @(proposal.Expert.User.City)</span>@await Html.PartialAsync("~/Views/Components/_Stars.cshtml", new StarsModel { Rating = proposal.Expert.Rating })</div></th>
+          </text>
+}
+        </tr>
+        <tr><td>Price</td>@foreach (var proposal in Model.Proposals)
+{
+<text><td class="@(Helpers.Truthy(Model.BestValue) && (Model.BestValue.ProposalId == proposal.ProposalId) ? "best" : "")"><b class="price">@(Helpers.Sar(proposal.ProposalPrice, 0)) SAR</b></td></text>
+}</tr>
+        <tr><td>Delivery time</td>@foreach (var proposal in Model.Proposals)
+{
+<text><td class="@(Helpers.Truthy(Model.BestValue) && (Model.BestValue.ProposalId == proposal.ProposalId) ? "best" : "")">@(proposal.DeliveryTime) days</td></text>
+}</tr>
+        <tr><td>Valid until</td>@foreach (var proposal in Model.Proposals)
+{
+<text><td class="@(Helpers.Truthy(Model.BestValue) && (Model.BestValue.ProposalId == proposal.ProposalId) ? "best" : "")">@(proposal.ExpirationTime.Format("j M Y"))</td></text>
+}</tr>
+        <tr><td>Scope of work</td>@foreach (var proposal in Model.Proposals)
+{
+<text><td class="@(Helpers.Truthy(Model.BestValue) && (Model.BestValue.ProposalId == proposal.ProposalId) ? "best" : "")"><ul class="scope">@foreach (var line in proposal.ScopeLines)
+{
+<text><li><i class="bi bi-check2"></i> @(line)</li></text>
+}</ul></td></text>
+}</tr>
+        <tr><td>Years of experience</td>@foreach (var proposal in Model.Proposals)
+{
+<text><td class="@(Helpers.Truthy(Model.BestValue) && (Model.BestValue.ProposalId == proposal.ProposalId) ? "best" : "")">@(proposal.Expert.ExperienceYears)</td></text>
+}</tr>
+        <tr><td>Completed bookings</td>@foreach (var proposal in Model.Proposals)
+{
+<text><td class="@(Helpers.Truthy(Model.BestValue) && (Model.BestValue.ProposalId == proposal.ProposalId) ? "best" : "")">@(Model.Stats.ExpertCompletedCount(proposal.Expert))</td></text>
+}</tr>
+        <tr><td>Reviews</td>@foreach (var proposal in Model.Proposals)
+{
+<text><td class="@(Helpers.Truthy(Model.BestValue) && (Model.BestValue.ProposalId == proposal.ProposalId) ? "best" : "")">@(Model.Stats.ExpertReviewCount(proposal.Expert))@if (Helpers.Truthy(proposal.Expert.Rating))
+{
+<text> &middot; @(Helpers.NumberFormat(Convert.ToDouble(proposal.Expert.Rating), 1))</text>
+}</td></text>
+}</tr>
+        <tr><td></td>
+          @foreach (var proposal in Model.Proposals)
+{
+<text>
+            @{
+    var best = Helpers.Truthy(Model.BestValue) && (Model.BestValue.ProposalId == proposal.ProposalId);
+}
+            <td class="@(Helpers.Truthy(best) ? "best" : "")"><a href="@(Routes.To("proposals.accept", new { proposal = proposal.ProposalId }))" class="m-btn @(Helpers.Truthy(best) ? "m-btn-primary" : "m-btn-outline") m-btn-block">Accept this one</a></td>
+          </text>
+}
+        </tr>
+      </table>
+      </div>
+    </div>
+    <p class="m-small" style="margin-top:16px"><i class="bi bi-info-circle"></i> Prices do not include the @(Helpers.ToInt32((Config.Masar.Commission * 100)))% platform commission and the @(Helpers.ToInt32((Config.Masar.Vat * 100)))% VAT, which appear before you pay.</p>
+  </text>
+}
+</div>

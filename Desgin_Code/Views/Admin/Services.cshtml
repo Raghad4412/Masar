@@ -1,0 +1,48 @@
+@model Masar.ViewModels.Admin.AdminServicesViewModel
+@{
+    Layout = "~/Views/Shared/_Dash.cshtml";
+    ViewData["panel"] = "admin";
+    ViewData["dmeCaption"] = Model.DmeCaption;
+    ViewData["title"] = "Consultations - Masar";
+    ViewData["dtitle"] = "Services";
+    ViewData["dcrumb"] = "Consultations and sessions";
+}
+@{
+    var tabs = new List<TabLink>();
+    foreach (var (key, label) in new Dictionary<string, string> { ["all"] = "All", ["Scheduled"] = "Scheduled", ["Held"] = "Held", ["Completed"] = "Completed", ["Cancelled"] = "Cancelled" })
+    {
+        tabs.Add(new TabLink
+        {
+            Label = label,
+            Count = Model.Counts[key],
+            Url = key == "all" ? Routes.To("admin.services") : Routes.To("admin.services", new { status = key }),
+            On = key == "all" ? string.IsNullOrEmpty(Model.Status) : Model.Status == key,
+        });
+    }
+}
+@{ Func<object?, IHtmlContent> slot1 = @<text>
+  @if (Model.Rows.Any())
+{
+    foreach (var row in Model.Rows)
+    {
+<text>
+    <tr>
+      <td class="nw"><b>@(row.Reference)</b><br><span class="m-small">@(Helpers.Limit(row.SessionTopic, 34))</span></td>
+      <td><div class="who">@await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = row.Client?.User, Box = "ava ava-sm", Fallback = "av av-sm" })<span>@(row.Client?.User?.FullName)</span></div></td>
+      <td><div class="who">@await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = row.Expert?.User, Box = "ava ava-sm", Fallback = "av av-sm" })<span>@(row.Expert?.User?.FullName)</span></div></td>
+      <td class="nw">@(row.Type?.TypeName)</td>
+      <td class="nw">@(row.StartsAt().Format("j M Y"))<br><span class="m-small">@(row.SlotLabel)</span></td>
+      <td class="r">@(Helpers.NumberFormat(Convert.ToDouble(row.Price), 2))</td>
+      <td>@await Html.PartialAsync("~/Views/Components/_Status.cshtml", new StatusModel { Kind = "session", Value = row.SessionStatus })</td>
+    </tr>
+  </text>
+    }
+}
+else
+{
+<text>
+    <tr><td colspan="7"><p class="m-body" style="padding:18px 0">No session matches this filter.</p></td></tr>
+  </text>
+}
+</text>; }
+@await Html.PartialAsync("~/Views/Components/_AdminTable.cshtml", new AdminTableModel { Pager = Model.Pager, Unit = "session", Title = "Consultation sessions", Note = "Every session a client has booked", Tabs = tabs, Head = new List<HeadCell> { new HeadCell { Label = "Reference" }, new HeadCell { Label = "Client" }, new HeadCell { Label = "Expert" }, new HeadCell { Label = "Type" }, new HeadCell { Label = "When" }, new HeadCell { Label = "Price", Right = true }, new HeadCell { Label = "Status" } }, Slot = slot1(null) })

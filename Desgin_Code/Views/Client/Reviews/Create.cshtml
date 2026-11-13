@@ -1,0 +1,56 @@
+@model Masar.ViewModels.Client.ReviewCreateViewModel
+@{
+    Layout = "~/Views/Shared/_App.cshtml";
+    ViewData["navItem"] = "bookings";
+    ViewData["pageClass"] = "center-page";
+    ViewData["title"] = "Write a review - Masar";
+}
+@section Crumb {
+
+  <span>Home</span><i class="bi bi-chevron-right"></i><a href="@(Routes.To("bookings.index"))">My Bookings</a><i class="bi bi-chevron-right"></i><a href="@(Model.Back)">@(Model.Reference)</a><i class="bi bi-chevron-right"></i><span class="cur">Review</span>
+
+}
+
+<form class="card pad" style="width:720px" method="POST" action="@(Model.Action)">
+  @Html.AntiForgeryToken()
+  <h1 class="m-h1">How was your @(Model.Kind == "session" ? "consultation" : "service")?</h1>
+  <p class="m-body" style="margin:10px 0 24px">Your review is shown on the expert profile and helps other
+    founders choose.</p>
+  <div class="revbox">
+    @await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = Model.User, Box = "ava ava-lg", Fallback = "av av-lg" })
+    <div><div class="m-h4">@(Model.User?.FullName)</div>
+      <p class="m-small">@(Model.Caption)</p></div>
+    @await Html.PartialAsync("~/Views/Components/_Status.cshtml", new StatusModel { Kind = Model.StatusKind, Value = Model.StatusValue })
+  </div>
+
+  <div class="ratepick">
+    <span class="m-label">Your rating</span>
+    <div class="bigstars ms-stars @Html.Raw((Errors.GetBag("default").Has("Rating") ? " err " : ""))">@for (var r = 5; r >= 1; r--)
+{
+<text>
+      <input class="ms-input" type="radio" id="r@(r)" name="Rating" value="@(r)" required @(Helpers.LooseEquals(Old("Rating"), r) ? "checked" : "")>
+      <label for="r@(r)"><i class="bi bi-star"></i></label></text>
+}</div>
+  </div>
+  @if (Errors.GetBag("default").Has("Rating"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle"></i> @(Errors.GetBag("default").First("Rating"))</p></text>
+}
+
+  <div class="m-fg">
+    <label class="m-label" for="Comment">Your review</label>
+    <div class="m-input area @Html.Raw((Errors.GetBag("default").Has("Comment") ? " err " : ""))">
+      <textarea id="Comment" name="Comment" maxlength="1000" data-ms-count="rev-count"
+                placeholder="What went well, and what could have been better?">@(Old("Comment"))</textarea>
+    </div>
+    @if (Errors.GetBag("default").Has("Comment"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle"></i> @(Errors.GetBag("default").First("Comment"))</p></text>
+}
+    <p class="m-help" id="rev-count">0 of 1,000 characters</p>
+  </div>
+  <div class="d-flex gap-3 justify-content-end">
+    <a href="@(Model.Back)" class="m-btn m-btn-outline">Not now</a>
+    <button type="submit" class="m-btn m-btn-primary">Publish my review</button>
+  </div>
+</form>

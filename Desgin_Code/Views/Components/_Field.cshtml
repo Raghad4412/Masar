@@ -1,0 +1,109 @@
+@model FieldModel
+@{
+    var name = Model.Name;
+    var label = Model.Label;
+    var type = Model.Type;
+    var value = Model.Value;
+    var placeholder = Model.Placeholder;
+    var help = Model.Help;
+    var required = Model.Required;
+    var icon = Model.Icon;
+    var area = Model.Area;
+    var rows = Model.Rows;
+    var counter = Model.Counter;
+    var options = Model.Options;
+    var blank = Model.Blank;
+    var prefix = Model.Prefix;
+    var suffix = Model.Suffix;
+    var fg = Model.Fg;
+    var req = Model.Req;
+    var errIcon = Model.ErrIcon;
+    var inputStyle = Model.InputStyle;
+    var bag = Model.Bag;
+    var attrs = Model.Attrs;
+    var slot = Model.Slot;
+}
+@{
+    var id = Helpers.Or(attrs.Get("id"), Helpers.Slug(name.Replace("[", "-").Replace("]", "-").Replace(".", "-").Replace("_", "-"), "-"));
+    var old = Old(name, value);
+    var store = Errors.GetBag(bag);
+    var hasError = store.Has(name);
+    var firstError = store.First(name);
+}
+<div class="@(fg)">
+  @if (Helpers.Truthy(label))
+{
+<text>
+    <label class="m-label" for="@(id)">@(label)@if (req)
+{
+<text> <span class="req">Required</span></text>
+}</label>
+  </text>
+}
+  <div class="m-input @Html.Raw((area ? " area " : "")) @Html.Raw((Helpers.Truthy(hasError) ? " err " : ""))"
+       @Html.Raw((Helpers.Truthy(inputStyle) ? " style=\"" + E(inputStyle) + "\" " : ""))>
+    @if (Helpers.Truthy(prefix))
+{
+<text><span>@(prefix)</span></text>
+}
+    @if (options != null)
+{
+<text>
+      <select id="@(id)" name="@(name)" @Html.Raw((required ? " required " : "")) @Html.Raw((attrs.Except(new[] { "id", "class" })).ToString())>
+        @if (blank != null)
+{
+<text>
+          <option value="" @Html.Raw((Convert.ToString(old) == "" ? " selected " : ""))>@(blank)</option>
+        </text>
+}
+        @foreach (var (key, text) in Helpers.OptionPairs(options))
+{
+<text>
+          @{
+    var optValue = key is int ? text : key;
+}
+          <option value="@(optValue)" @(Convert.ToString(old) == Convert.ToString(optValue) ? "selected" : "")>@(text)</option>
+        </text>
+}
+      </select>
+    </text>
+}
+else if (area)
+{
+<text>
+      <textarea id="@(id)" name="@(name)" @Html.Raw((required ? " required " : ""))
+                @Html.Raw((Helpers.Truthy(rows) ? " rows=\"" + E(rows) + "\" " : ""))
+                @Html.Raw((Helpers.Truthy(placeholder) ? " placeholder=\"" + E(placeholder) + "\" " : ""))
+                @Html.Raw((Helpers.Truthy(counter) ? " data-ms-count=\"" + E(counter) + "\" " : ""))
+                @Html.Raw((attrs.Except(new[] { "id", "class" })).ToString())>@(old)</textarea>
+    </text>
+}
+else
+{
+<text>
+      <input id="@(id)" name="@(name)" type="@(type)"
+             @Html.Raw((required ? " required " : ""))
+             @Html.Raw((Helpers.Truthy(placeholder) ? " placeholder=\"" + E(placeholder) + "\" " : ""))
+             @Html.Raw((type != "password" ? " value=\"" + E(old) + "\" " : ""))
+             @Html.Raw((attrs.Except(new[] { "id", "class" })).ToString())>
+    </text>
+}
+    @if (Helpers.Truthy(suffix))
+{
+<text><span>@(suffix)</span></text>
+}
+    @if (Helpers.Truthy(icon))
+{
+<text><i class="bi @(icon)" style="color:#9BAFA6"></i></text>
+}
+  </div>
+  @if (Helpers.Truthy(firstError))
+{
+<text><p class="m-err"><i class="bi @(errIcon)"></i> @(firstError)</p></text>
+}
+  @if (Helpers.Truthy(help))
+{
+<text><p class="m-help">@(help)</p></text>
+}
+  @(slot)
+</div>

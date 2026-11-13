@@ -1,0 +1,73 @@
+@model Masar.ViewModels.Client.RequestsIndexViewModel
+@{
+    Layout = "~/Views/Shared/_App.cshtml";
+    ViewData["navItem"] = "requests";
+    ViewData["title"] = "My Requests - Masar";
+}
+@section Crumb {
+
+  <span>Home</span><i class="bi bi-chevron-right"></i><span class="cur">My Requests</span>
+
+}
+
+<div class="wrap">
+  <div class="page-h">
+    <div><h1 class="m-h1">My Requests</h1><p class="m-body">Describe a project once and let verified experts send you offers</p></div>
+    <a href="@(Routes.To("services.index"))" class="m-btn m-btn-primary"><i class="bi bi-plus-lg"></i> New request</a>
+  </div>
+  @if (!Model.Requests.Any())
+{
+<text>
+    <div class="empty">
+      @await Html.PartialAsync("~/Views/Svg/_EmptyRequests.cshtml")
+      <h3 class="m-h3" style="margin-top:22px">You have no service requests yet</h3>
+      <p class="m-body" style="max-width:470px;margin:10px auto 0">Post what you need: branding, packaging,
+        interior design or a feasibility study, and receive proposals with a price, a delivery time and a scope
+        of work. You pay only after you accept one.</p>
+      <div class="d-flex gap-3" style="justify-content:center;margin-top:26px">
+        <a href="@(Routes.To("home"))#how" class="m-btn m-btn-outline">How it works</a>
+        <a href="@(Routes.To("services.index"))" class="m-btn m-btn-primary"><i class="bi bi-plus-lg"></i> Post my first request</a>
+      </div>
+      @if (Helpers.Truthy(Model.Popular))
+{
+<text>
+        <div class="sugg">
+          <p class="m-small" style="margin-bottom:12px">Most requested this month:</p>
+          @foreach (var field in Model.Popular)
+{
+<text><a class="fchip" href="@(Routes.To("requests.create", new { field = field }))">@(field)</a></text>
+}
+        </div>
+      </text>
+}
+    </div>
+  </text>
+}
+else
+{
+<text>
+    <div class="card">
+      <div class="md-table-scroll">
+      <table class="dt">
+        <tr><th>Reference</th><th>Title</th><th>Service type</th><th>Deadline</th><th>Proposals</th><th>Status</th><th></th></tr>
+        @foreach (var row in Model.Requests)
+{
+<text>
+          <tr>
+            <td><b>@(row.Reference)</b></td>
+            <td>@(row.Title)</td>
+            <td>@(row.FieldName()) · @(row.Type?.ServicePackge)</td>
+            <td>@(row.Deadline.Format("j M Y"))</td>
+            <td>@(row.Proposals.Where(x => x.ProposalStatus == "Waiting").Count())</td>
+            <td>@await Html.PartialAsync("~/Views/Components/_Status.cshtml", new StatusModel { Kind = "request", Value = row.Status })</td>
+            <td class="r"><a class="m-link" href="@(new[] { "In Progress", "Completed" }.Contains(row.Status) ? Routes.To("services.show", new { serviceRequest = row.ServiceRequestId }) : Routes.To("requests.show", new { serviceRequest = row.ServiceRequestId }))">Open</a></td>
+          </tr>
+        </text>
+}
+      </table>
+      </div>
+      @await Html.PartialAsync("~/Views/Components/_Pager.cshtml", new PagerModel { Pager = Model.Pager, Unit = "request" })
+    </div>
+  </text>
+}
+</div>

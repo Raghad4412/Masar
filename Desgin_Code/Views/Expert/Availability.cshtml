@@ -1,0 +1,135 @@
+@model Masar.ViewModels.ExpertArea.AvailabilityViewModel
+@{
+    Layout = "~/Views/Shared/_Dash.cshtml";
+    ViewData["panel"] = "expert";
+    ViewData["dmeCaption"] = Model.DmeCaption;
+    ViewData["title"] = "Availability - Masar";
+    ViewData["dtitle"] = "Availability";
+    ViewData["dcrumb"] = "Availability";
+}
+@if (!Helpers.Truthy(Model.IsConsultant))
+{
+<text>
+  <div class="dcard">
+    <div class="dch"><div><h3 class="m-h3">Availability</h3><p class="m-small">Free times are for consultations</p></div></div>
+    <div class="dcb p"><p class="m-body">Sessions belong to the Legal, Finance and Business consultants.
+      As a @(Model.Expert.Specialization) expert you work through service requests, so your deadlines appear on
+      <a class="m-link" href="@(Routes.To("expert.services"))">My Services</a> instead.</p></div>
+  </div>
+</text>
+}
+else
+{
+<text>
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">My free times</h3><p class="m-small">@(Model.From.Format("j F")) to @(Model.From.AddDays(6).Format("j F Y")) &middot; @(Model.Free) free @(Helpers.Plural("slot", Model.Free))</p></div><div class="sp">
+    <a class="navbtn" href="@(Routes.To("expert.availability", new { week = Model.PrevWeek.ToDateString() }))"><i class="bi bi-chevron-left"></i></a>
+    <a class="navbtn" href="@(Routes.To("expert.availability", new { week = Model.NextWeek.ToDateString() }))"><i class="bi bi-chevron-right"></i></a>
+    <a href="#" class="m-btn m-btn-primary m-btn-sm" data-ms-open="ms-slot"><i class="bi bi-plus-lg"></i> Add a time slot</a></div></div>
+  <div class="dcb p"><div class="md-table-scroll"><div class="wk"><div></div>
+    @foreach (var day in Model.Days.Values)
+{
+<text>
+      <div class="dh"><b>@(day.Date.Format("D"))</b><span>@(day.Date.Format("j M"))</span></div>
+    </text>
+}
+    @if (Model.Hours.Any())
+{
+    foreach (var hour in Model.Hours)
+    {
+<text>
+      <div class="hh">@(hour)</div>
+      @foreach (var day in Model.Days.Values)
+{
+<text>
+        @{
+    var slot = day.Slots.FirstOrDefault(x => x.SlotLabel == hour);
+}
+        @if (!Helpers.Truthy(slot))
+{
+<text>
+          <div class="cl"></div>
+        </text>
+}
+else if (slot.SessionStatus == "Available")
+{
+<text>
+          <div class="ev"><b>Free</b><span>@(hour) - @(Helpers.Substr(slot.TimeString("End_Time"), 0, 5))</span>
+            <form method="POST" action="@(Routes.To("expert.availability.destroy", new { session = slot.ConsultationSessionId }))"
+                  data-ms-confirm="@(slot.StartsAt().Format("l j F")) at @(slot.SlotLabel) disappears from your calendar, so no client can book it."
+                  data-ms-confirm-title="Remove this time slot?"
+                  data-ms-confirm-ok="Remove the slot" data-ms-confirm-cancel="Keep it"
+                  data-ms-confirm-tone="danger">@Html.AntiForgeryToken() <input type="hidden" name="_method" value="DELETE">
+              <button type="submit" class="m-link" style="border:0;background:none;padding:2px 0;font:inherit;cursor:pointer"><i class="bi bi-trash"></i></button>
+            </form></div>
+        </text>
+}
+else if (slot.SessionStatus == "Blocked")
+{
+<text>
+          <div class="ev"><b>Blocked by you</b><span>@(hour) - @(Helpers.Substr(slot.TimeString("End_Time"), 0, 5))</span>
+            <form method="POST" action="@(Routes.To("expert.availability.destroy", new { session = slot.ConsultationSessionId }))"
+                  data-ms-confirm="@(slot.StartsAt().Format("l j F")) at @(slot.SlotLabel) disappears from your calendar, so no client can book it."
+                  data-ms-confirm-title="Remove this time slot?"
+                  data-ms-confirm-ok="Remove the slot" data-ms-confirm-cancel="Keep it"
+                  data-ms-confirm-tone="danger">@Html.AntiForgeryToken() <input type="hidden" name="_method" value="DELETE">
+              <button type="submit" class="m-link" style="border:0;background:none;padding:2px 0;font:inherit;cursor:pointer"><i class="bi bi-trash"></i></button>
+            </form></div>
+        </text>
+}
+else
+{
+<text>
+          <div class="ev gold"><b>@(slot.Client?.User?.FullName)</b><span>@(slot.SessionStatus)<br>@(hour) - @(Helpers.Substr(slot.TimeString("End_Time"), 0, 5))</span></div>
+        </text>
+}
+      </text>
+}
+    </text>
+    }
+}
+else
+{
+<text>
+      <div class="hh">-</div>
+      @foreach (var day in Model.Days.Values)
+{
+<text><div class="cl"></div></text>
+}
+    </text>
+}
+  </div></div>
+    <div class="don-leg" style="flex-direction:row;flex-wrap:wrap;gap:18px">
+      <span><em style="background:#F1F4F2;border-left:3px solid #C3D2CB"></em> Free or blocked</span>
+      <span><em style="background:#FBF2E0;border-left:3px solid #E0A63C"></em> Booked by a client</span>
+    </div></div>
+</div>
+</text>
+}
+
+@section Dialogs {
+
+@if (Helpers.Truthy(Model.IsConsultant))
+{
+<text>
+  <div class="ms-dialog" id="ms-slot" @Html.Raw((!Errors.Any() ? " hidden " : ""))>
+    <form class="card pad" style="width:520px" method="POST" action="@(Routes.To("expert.availability.store"))">
+      @Html.AntiForgeryToken()
+      <h3 class="m-h3">Add a time slot</h3>
+      <p class="m-body" style="margin-top:8px">Every Masar session is @(Config.Masar.SessionMinutes) minutes.
+        Clients can book any free slot you publish.</p>
+      <div class="m-two" style="margin-top:18px">
+        @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Session_Date", Label = "Date", Type = "date", Required = true, Attrs = new AttributeBag { ["min"] = Convert.ToString(Clock.Now.ToDateString()) } })
+        @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Start_Time", Label = "Start time", Type = "time", Required = true, Attrs = new AttributeBag { ["min"] = "08:00", ["max"] = "22:00", ["step"] = "1800" } })
+      </div>
+      @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "repeat_weeks", Label = "Repeat weekly for", Type = "number", Placeholder = "1", Help = "Leave it at 1 for a single slot, or up to 8 to repeat it every week.", Attrs = new AttributeBag { ["min"] = "1", ["max"] = "8", ["step"] = "1" } })
+      <div class="d-flex gap-3" style="margin-top:20px;justify-content:flex-end">
+        <button type="button" class="m-btn m-btn-outline" data-ms-close>Cancel</button>
+        <button type="submit" class="m-btn m-btn-primary">Publish the slot</button>
+      </div>
+    </form>
+  </div>
+</text>
+}
+
+}

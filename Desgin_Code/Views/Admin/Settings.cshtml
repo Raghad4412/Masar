@@ -1,0 +1,52 @@
+@model Masar.ViewModels.Admin.AdminSettingsViewModel
+@{
+    Layout = "~/Views/Shared/_Dash.cshtml";
+    ViewData["panel"] = "admin";
+    ViewData["dmeCaption"] = Model.DmeCaption;
+    ViewData["title"] = "Platform Settings - Masar";
+    ViewData["dtitle"] = "Platform Settings";
+    ViewData["dcrumb"] = "Platform Settings";
+}
+<div class="d2">
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Money</h3><p class="m-small">Read-only: these rates live in appsettings.json</p></div><div class="sp"><span class="m-chip"><i class="bi bi-lock"></i> Not editable</span></div></div>
+  <div class="dcb p">
+    <div class="pl"><span>Platform commission</span><span>@(Helpers.ToInt32((Config.Masar.Commission * 100)))%</span></div>
+    <div class="pl"><span>VAT on the price</span><span>@(Helpers.ToInt32((Config.Masar.Vat * 100)))%</span></div>
+    <div class="pl"><span>What the client pays</span><span>price × @(Helpers.NumberFormat(1 + Config.Masar.Commission + Config.Masar.Vat, 2))</span></div>
+    <div class="pl"><span>What the expert receives</span><span>price × @(Helpers.NumberFormat(1 - Config.Masar.Commission, 2))</span></div>
+    <div class="pl"><span>Business Idea Package</span><span>@(Helpers.Sar(Config.Masar.IdeaPrice, 0)) SAR (@(Helpers.NumberFormat(Helpers.MasarTotal(Config.Masar.IdeaPrice), 2)) SAR to pay)</span></div>
+    <div class="pl" style="border-bottom:0"><span>Example</span><span>450 → @(Helpers.NumberFormat(Helpers.MasarTotal(450), 2)) SAR</span></div>
+    <div class="note" style="margin-top:18px"><i class="bi bi-receipt"></i>
+      Collected so far: @(Helpers.Sar(Model.Collected, 0)) SAR of commission and @(Helpers.Sar(Model.VatCollected, 0)) SAR of VAT,
+      across every Paid and Released payment.</div>
+  </div>
+</div>
+<div class="dgrid" style="display:flex;flex-direction:column;gap:20px">
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Rules</h3><p class="m-small">The business rules the platform enforces</p></div></div>
+  <div class="dcb p">
+    <div class="pl"><span>Session length</span><span>@(Config.Masar.SessionMinutes) minutes</span></div>
+    <div class="pl"><span>Slot hold while paying</span><span>@(Config.Masar.HoldMinutes) minutes</span></div>
+    <div class="pl"><span>Free cancellation until</span><span>@(Config.Masar.FreeCancelHours) hours before</span></div>
+    <div class="pl"><span>Kept on a late cancellation</span><span>@(Helpers.ToInt32((Config.Masar.LateCancelRefund * 100)))%</span></div>
+    <div class="pl"><span>Earliest service delivery</span><span>today + @(Config.Masar.RequestLeadDays) days</span></div>
+    <div class="pl"><span>Proposal validity</span><span>@(Config.Masar.ProposalValidityDays) days</span></div>
+    <div class="pl"><span>Log-in lockout</span><span>@(Config.Masar.LoginMaxAttempts) attempts / @(Helpers.ToInt32((Config.Masar.LoginLockSeconds / 60))) minutes</span></div>
+    <div class="pl" style="border-bottom:0"><span>Password reset link</span><span>valid @(Config.Masar.ResetMinutes) minutes</span></div>
+  </div>
+</div>
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Invoice issuer</h3><p class="m-small">Printed on every tax invoice</p></div></div>
+  <div class="dcb p">
+    <div class="pl"><span>Issuer</span><span>@(Config.Masar.Issuer)</span></div>
+    <div class="pl"><span>VAT number</span><span>@(Config.Masar.VatNumber)</span></div>
+    <div class="pl"><span>CR number</span><span>@(Config.Masar.CrNumber)</span></div>
+    <div class="pl" style="border-bottom:0"><span>Support</span><span>@(Config.Masar.SupportEmail)</span></div>
+    <div class="note" style="margin-top:18px"><i class="bi bi-info-circle"></i>
+      The chosen ERD has no settings table, so these values are read from appsettings.json and
+      cannot be changed from the panel.</div>
+  </div>
+</div>
+</div>
+</div>

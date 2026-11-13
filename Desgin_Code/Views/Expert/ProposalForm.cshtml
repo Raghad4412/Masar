@@ -1,0 +1,84 @@
+@model Masar.ViewModels.ExpertArea.ProposalFormViewModel
+@{
+    Layout = "~/Views/Shared/_Dash.cshtml";
+    ViewData["panel"] = "expert";
+    ViewData["dmeCaption"] = Model.DmeCaption;
+    ViewData["mainClass"] = "page";
+    ViewData["title"] = "Submit a Proposal - Masar";
+    ViewData["dtitle"] = "Submit a Proposal";
+    ViewData["dcrumb"] = "Submit a proposal";
+}
+<div class="wrap">
+  <div class="bcols">
+    <form method="POST" id="proposal-form"
+          action="@(Helpers.Truthy(Model.Proposal) ? Routes.To("expert.proposal.update", new { proposal = Model.Proposal.ProposalId }) : Routes.To("expert.proposal.store", new { serviceRequest = Model.Request.ServiceRequestId }))">
+      @Html.AntiForgeryToken()
+      @if (Helpers.Truthy(Model.Proposal))
+{
+<text><input type="hidden" name="_method" value="PUT"></text>
+}
+      <section>
+        <div class="card pad">
+          <h2 class="m-h2" style="font-size:26px">Your proposal</h2>
+          <p class="m-body" style="margin:8px 0 22px">The client sees your price, your delivery time and your
+            scope of work next to the other proposals.</p>
+          <div class="m-two">
+            <div class="m-fg"><label class="m-label" for="Proposal_Price">Your price (SAR) <span class="req">Required</span></label>
+              <div class="m-input @Html.Raw((Errors.GetBag("default").Has("Proposal_Price") ? " err " : ""))">
+                <input id="Proposal_Price" name="Proposal_Price" type="number" required min="100" max="1000000" step="1"
+                       value="@(Old("Proposal_Price", Helpers.Truthy(Model.Proposal?.ProposalPrice) ? Helpers.ToInt32(Model.Proposal.ProposalPrice) : ""))">
+              </div>
+              @if (Errors.GetBag("default").Has("Proposal_Price"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle-fill"></i> @(Errors.GetBag("default").First("Proposal_Price"))</p></text>
+}
+              <p class="m-help">Client budget: @(Model.Request.BudgetDisplay)</p></div>
+            <div class="m-fg"><label class="m-label" for="Delivery_Time">Delivery time (days) <span class="req">Required</span></label>
+              <div class="m-input @Html.Raw((Errors.GetBag("default").Has("Delivery_Time") ? " err " : ""))">
+                <input id="Delivery_Time" name="Delivery_Time" type="number" required min="1" max="180" step="1"
+                       value="@(Old("Delivery_Time", Model.Proposal?.DeliveryTime))">
+              </div>
+              @if (Errors.GetBag("default").Has("Delivery_Time"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle-fill"></i> @(Errors.GetBag("default").First("Delivery_Time"))</p></text>
+}
+              <p class="m-help">Average for this type: @(Helpers.Or(Model.AverageDays, "-")) days</p></div>
+          </div>
+          <div class="m-fg">
+            <label class="m-label" for="Scope_OF_Work">Scope of work <span class="req">Required</span></label>
+            <div class="m-input area @Html.Raw((Errors.GetBag("default").Has("Scope_OF_Work") ? " err " : ""))" style="min-height:150px">
+              <textarea id="Scope_OF_Work" name="Scope_OF_Work" required minlength="50" maxlength="1500"
+                        data-ms-count="scope-count"
+                        placeholder="What you deliver, in how many concepts, which files, and how many rounds of revisions.">@(Old("Scope_OF_Work", Model.Proposal?.ScopeOfWork))</textarea>
+            </div>
+            @if (Errors.GetBag("default").Has("Scope_OF_Work"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle-fill"></i> @(Errors.GetBag("default").First("Scope_OF_Work"))</p></text>
+}
+            <p class="m-help" id="scope-count">0 of 1,500 characters</p>
+          </div>
+        </div>
+      </section>
+    </form>
+    <aside>
+      <div class="card pad">
+        <h4 class="m-h4">The request</h4>
+        <p class="m-body" style="margin-top:8px"><b>@(Model.Request.Title)</b></p>
+        <div class="pl" style="margin-top:12px"><span>Client</span><span>@(Model.Request.Client?.User?.FullName)</span></div>
+        <div class="pl"><span>Budget</span><span>@(Helpers.NumberFormat(Convert.ToDouble(Model.Request.BudgetMin()))) - @(Helpers.NumberFormat(Convert.ToDouble(Model.Request.BudgetMax())))</span></div>
+        <div class="pl"><span>Deadline</span><span>@(Model.Request.Deadline.Format("j M Y"))</span></div>
+        <div class="pl" style="border:0"><span>Proposals</span><span>@(Model.Others) so far</span></div>
+        <a class="m-link" href="@(Routes.To("expert.requests"))" style="margin-top:12px">Back to open requests <i class="bi bi-arrow-right"></i></a>
+      </div>
+      <div class="card pad" style="margin-top:18px">
+        <h4 class="m-h4">What you earn</h4>
+        <div class="pl"><span>Your price</span><span>@(Helpers.NumberFormat(Model.Price, 2))</span></div>
+        <div class="pl"><span>Platform commission (@(Helpers.ToInt32((Config.Masar.Commission * 100)))%)</span><span>&minus; @(Helpers.NumberFormat(Model.Commission, 2))</span></div>
+        <div class="pt"><span>You receive</span><span class="tot">@(Helpers.NumberFormat(Model.Payout, 2)) SAR</span></div>
+        <p class="m-small" style="margin-top:10px">Released after the client marks the service completed.</p>
+      </div>
+      <button type="submit" form="proposal-form" class="m-btn m-btn-primary m-btn-block" style="margin-top:18px">@(Helpers.Truthy(Model.Proposal) ? "Save my proposal" : "Send my proposal")</button>
+      <a href="@(Routes.To("expert.requests"))" class="m-btn m-btn-outline m-btn-block" style="margin-top:10px">Cancel</a>
+    </aside>
+  </div>
+</div>

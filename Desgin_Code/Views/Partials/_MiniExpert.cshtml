@@ -1,0 +1,15 @@
+@{
+    var user = (User)ViewData["user"]!;
+    var expert = (Expert)ViewData["expert"]!;
+}
+<div class="mini-ex">
+  @await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = user, Box = "ava", Fallback = "av" })
+  <div>
+    <div class="m-h4">@(user.FullName)</div>
+    <p class="m-small">@(expert.Title) &middot; @(user.City)@if (Helpers.Truthy(expert.Rating))
+{
+<text><br>@await Html.PartialAsync("~/Views/Components/_Stars.cshtml", new StarsModel { Rating = expert.Rating, Size = "12px" }) @(Helpers.NumberFormat(Convert.ToDouble(expert.Rating), 1))</text>
+}</p>
+  </div>
+  <span class="m-chip chip-ok"><i class="bi bi-patch-check-fill"></i> Verified</span>
+</div>

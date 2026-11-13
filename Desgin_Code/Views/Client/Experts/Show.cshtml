@@ -1,0 +1,295 @@
+@model Masar.ViewModels.Client.ExpertShowViewModel
+@{
+    Layout = "~/Views/Shared/_App.cshtml";
+    ViewData["navItem"] = "bookings";
+    ViewData["title"] = Model.User.FullName + " - Masar";
+}
+@section Crumb {
+
+  <span>Home</span><i class="bi bi-chevron-right"></i><a href="@(Routes.To("experts.index"))">Find an Expert</a><i class="bi bi-chevron-right"></i><span class="cur">@(Model.User.FullName)</span>
+
+}
+
+<div class="wrap">
+  <div class="phero">
+    @await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = Model.User, Box = "ava ava-xl", Fallback = "av av-xl", Alt = Model.User.FullName })
+    <div class="ph-main">
+      <div class="d-flex align-items-center gap-3">
+        <h1 class="m-h1">@(Model.User.FullName)</h1>
+        <span class="m-chip chip-ok"><i class="bi bi-patch-check-fill"></i> Verified expert</span>
+        @if (Helpers.Truthy(Model.TopRated))
+{
+<text><span class="m-chip chip-gold"><i class="bi bi-trophy-fill"></i> Top 5% in @(Helpers.Before(Model.Expert.Specialization, " "))</span></text>
+}
+      </div>
+      <p class="m-body" style="margin-top:6px">@(Model.Expert.Title) &middot; @(Model.User.City)@if (Helpers.Truthy(Model.ReplyHours))
+{
+<text> &middot; Replies within @(Model.ReplyHours) @(Helpers.Plural("hour", Model.ReplyHours))</text>
+}</p>
+      <div class="ph-meta">
+        <span>@if (Helpers.Truthy(Model.Expert.Rating))
+{
+<text>@await Html.PartialAsync("~/Views/Components/_Stars.cshtml", new StarsModel { Rating = Model.Expert.Rating, Size = "15px" }) <b>@(Helpers.NumberFormat(Convert.ToDouble(Model.Expert.Rating), 1))</b> <span class="m-small">(@(Model.Reviews.Count()) @(Helpers.Plural("review", Model.Reviews.Count())))</span></text>
+}
+else
+{
+<text><span class="m-small">No reviews yet</span></text>
+}</span>
+        <span><i class="bi bi-award"></i> @(Model.Expert.ExperienceYears) years of experience</span>
+        <span><i class="bi bi-briefcase"></i> @(Model.Bookings) completed @(Helpers.Plural("booking", Model.Bookings))</span>
+        <span><i class="bi bi-translate"></i> Arabic, English</span>
+      </div>
+    </div>
+    <div class="ph-cta">
+      <div class="price-big">@(Helpers.Sar(Model.Expert.SessionPrice, 0)) <span>SAR / @(Model.Expert.IsConsultant() ? "session" : "project")</span></div>
+      @if (Model.Expert.IsConsultant())
+{
+<text>
+        <a href="@(Routes.To("bookings.choose", new { expert = Model.Expert.ExpertId }))" class="m-btn m-btn-primary m-btn-block">Book a consultation</a>
+        
+        <a href="@(Routes.To("bookings.choose", new { expert = Model.Expert.ExpertId }))" class="m-btn m-btn-outline m-btn-block" style="margin-top:10px">Send a message</a>
+      </text>
+}
+else
+{
+<text>
+        <a href="@(Routes.To("services.index"))" class="m-btn m-btn-primary m-btn-block">Post a request</a>
+      </text>
+}
+    </div>
+  </div>
+  <div class="tabs">
+    <a href="@(Routes.To("experts.show", new { expert = Model.Expert.ExpertId }))" class="@(Model.Tab == "overview" ? "on" : "")">Overview</a>
+    <a href="@(Routes.To("experts.show", new { expert = Model.Expert.ExpertId, tab = "expertise" }))" class="@(Model.Tab == "expertise" ? "on" : "")">Areas of Expertise</a>
+    <a href="@(Routes.To("experts.show", new { expert = Model.Expert.ExpertId, tab = "reviews" }))" class="@(Model.Tab == "reviews" ? "on" : "")">Reviews</a>
+    <a href="@(Routes.To("experts.show", new { expert = Model.Expert.ExpertId, tab = "availability" }))" class="@(Model.Tab == "availability" ? "on" : "")">Availability</a>
+  </div>
+  <div class="pcols">
+    <section>
+      @if (Model.Tab == "reviews")
+{
+<text>
+        <div class="card pad">
+          <h3 class="m-h3">Ratings and reviews</h3>
+          <div class="rsum">
+            <div class="rbig">
+              <div class="v">@(Helpers.Truthy(Model.Expert.Rating) ? Helpers.NumberFormat(Convert.ToDouble(Model.Expert.Rating), 1) : "-")</div>@await Html.PartialAsync("~/Views/Components/_Stars.cshtml", new StarsModel { Rating = Model.Expert.Rating, Size = "16px" })
+              <p class="m-small">Based on @(Model.Reviews.Count()) @(Helpers.Plural("review", Model.Reviews.Count()))</p>
+            </div>
+            <div class="rbars">
+              @foreach (var (star, row) in Model.Distribution.Pairs())
+{
+<text>
+                <div class="rbar"><span>@(star)</span><i class="bi bi-star-fill"></i>
+                  <span class="tr"><span class="fl" style="width:@(row.Percent)%"></span></span><span class="m-small">@(row.Count)</span></div>
+              </text>
+}
+            </div>
+          </div>
+          <div class="rfilters">
+            <a class="fchip @(Helpers.Truthy(Http.Query("with")) ? "" : "on")" href="@(Routes.To("experts.show", new { expert = Model.Expert.ExpertId, tab = "reviews" }))">All reviews</a>
+            <a class="fchip @(Helpers.Truthy(Http.Query("with")) ? "on" : "")" href="@(Routes.To("experts.show", new { expert = Model.Expert.ExpertId, tab = "reviews", with = 1 }))">With comments (@(Model.WithComments))</a>
+          </div>
+        </div>
+        @if (Helpers.When(Model.Reviews, Http.Query("with"), c => c.Where(r => Convert.ToString(r.Comment).Trim() != "")).Any())
+{
+    foreach (var review in Helpers.When(Model.Reviews, Http.Query("with"), c => c.Where(r => Convert.ToString(r.Comment).Trim() != "")))
+    {
+<text>
+          <div class="card pad rev">
+            <div class="rev-h">
+              @await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = review.User, Box = "ava ", Fallback = "av" })
+              <div><div class="m-h4">@(review.User.FullName)</div><p class="m-small">@(review.User.City)</p></div>
+              <div class="rev-r">@await Html.PartialAsync("~/Views/Components/_Stars.cshtml", new StarsModel { Rating = review.Rating })<p class="m-small">@(review.ReviewDate.IsToday() ? "Today" : review.ReviewDate.Format("j M Y"))</p></div>
+            </div>
+            @if (Convert.ToString(review.Comment).Trim() != "")
+{
+<text><p class="m-body">@(review.Comment)</p></text>
+}
+            <span class="m-chip">@(Helpers.Truthy(review.ConsultationSessionId) ? (review.Session?.Type?.TypeName ?? "Consultation") : "Service · " + (review.Request?.Type?.TypeName ?? ""))</span>
+          </div>
+        </text>
+    }
+}
+else
+{
+<text>
+          <div class="card pad">
+            <p class="m-body">No reviews yet. @(Model.User.FirstName) is waiting for the first one.</p>
+          </div>
+        </text>
+}
+      </text>
+}
+else
+{
+<text>
+        @if (Model.Tab != "availability")
+{
+<text>
+          <div class="card pad">
+            <h3 class="m-h3">About @(Model.User.FirstName)</h3>
+            <p class="m-body" style="margin-top:12px">@(Model.Expert.Bio)</p>
+            @if (Model.Portfolio.Any())
+{
+<text>
+              <div class="tagrow">
+                @foreach (var item in Model.Portfolio.Take(6))
+{
+<text><span class="m-chip">@(item.Title)</span></text>
+}
+              </div>
+            </text>
+}
+          </div>
+        </text>
+}
+
+        @if (Model.Portfolio.Any() && (Model.Tab != "availability"))
+{
+<text>
+          <div class="card pad" style="margin-top:22px">
+            <div class="d-flex align-items-center justify-content-between">
+              <h3 class="m-h3">Areas of Expertise</h3>@if (Model.Portfolio.Count() > 6)
+{
+<text><a class="m-link" href="@(Routes.To("experts.show", new { expert = Model.Expert.ExpertId, tab = "expertise" }))">See all @(Model.Portfolio.Count()) cases <i class="bi bi-arrow-right"></i></a></text>
+}
+            </div>
+            <div class="pgrid">
+              @foreach (var item in (Model.Tab == "expertise" ? Model.Portfolio : Model.Portfolio.Take(6)))
+{
+<text>
+                <figure class="pitem"><img src="@(item.Image)" alt="@(item.Title)"><figcaption>@(item.Title)</figcaption></figure>
+              </text>
+}
+            </div>
+          </div>
+        </text>
+}
+
+        @if (Model.Tab == "availability")
+{
+<text>
+          <div class="card pad">
+            <h3 class="m-h3">Next free times</h3>
+            @if (Model.Slots.Any())
+{
+    foreach (var loop in Model.Slots.Loop())
+    {
+<text>@{ var slot = loop.Item; }
+              <div class="slotline @Html.Raw((Helpers.Truthy(loop.First) ? " on " : ""))"><span><i class="bi bi-calendar3"></i> @(slot.StartsAt().Format("D j M")) &middot; @(slot.SlotLabel)</span><span class="free">Free</span></div>
+            </text>
+    }
+}
+else
+{
+<text>
+              <p class="m-body" style="margin-top:12px">@(Model.User.FirstName) has not published any free times yet.</p>
+            </text>
+}
+            @if (Model.Slots.Any())
+{
+<text>
+              <a href="@(Routes.To("bookings.choose", new { expert = Model.Expert.ExpertId }))" class="m-btn m-btn-primary m-btn-block" style="margin-top:18px">Choose a time</a>
+            </text>
+}
+          </div>
+        </text>
+}
+
+        @if (Model.Tab == "overview")
+{
+<text>
+          <div class="card pad" style="margin-top:22px">
+            <h3 class="m-h3">What a session includes</h3>
+            <div class="inc-grid">
+              <div><i class="bi bi-camera-video"></i><div><b>60 minutes online</b><p class="m-small">Video call inside Masar, recorded on request.</p></div></div>
+              <div><i class="bi bi-journal-text"></i><div><b>Written legal summary</b><p class="m-small">Sent to your project within 24 hours.</p></div></div>
+              <div><i class="bi bi-chat-dots"></i><div><b>7 days of chat</b><p class="m-small">Follow-up questions after the session.</p></div></div>
+              <div><i class="bi bi-file-earmark-arrow-down"></i><div><b>Documents and templates</b><p class="m-small">Clauses and examples shared with you.</p></div></div>
+            </div>
+          </div>
+        </text>
+}
+      </text>
+}
+    </section>
+
+    <aside>
+      @if (Model.Tab == "reviews")
+{
+<text>
+        <div class="card pad bookbox">
+          <div class="price-big">@(Helpers.Sar(Model.Expert.SessionPrice, 0)) <span>SAR / @(Model.Expert.IsConsultant() ? "session" : "project")</span></div>
+          @if (Model.Expert.IsConsultant())
+{
+<text>
+            <a href="@(Routes.To("bookings.choose", new { expert = Model.Expert.ExpertId }))" class="m-btn m-btn-primary m-btn-block" style="margin-top:16px">Book a consultation</a>
+          </text>
+}
+          <div class="assure">
+            @if (Helpers.Truthy(Model.Expert.Rating))
+{
+<text><span><i class="bi bi-star-fill" style="color:var(--amber)"></i> @(Helpers.NumberFormat(Convert.ToDouble(Model.Expert.Rating), 1)) from @(Model.Reviews.Count()) @(Helpers.Plural("review", Model.Reviews.Count()))</span></text>
+}
+            @if (Helpers.Truthy(Model.ReplyHours))
+{
+<text><span><i class="bi bi-clock"></i> Replies within @(Model.ReplyHours) @(Helpers.Plural("hour", Model.ReplyHours))</span></text>
+}
+            <span><i class="bi bi-check2-circle"></i> @(Model.Bookings) completed @(Helpers.Plural("booking", Model.Bookings))</span>
+          </div>
+        </div>
+      </text>
+}
+else
+{
+<text>
+        <div class="card pad bookbox">
+          <h4 class="m-h4">Next free times</h4>
+          @if (Model.Slots.Any())
+{
+    foreach (var loop in Model.Slots.Loop())
+    {
+<text>@{ var slot = loop.Item; }
+            <div class="slotline @Html.Raw((Helpers.Truthy(loop.First) ? " on " : ""))"><span><i class="bi bi-calendar3"></i> @(slot.StartsAt().Format("D j M")) &middot; @(slot.SlotLabel)</span><span class="free">Free</span></div>
+          </text>
+    }
+}
+else
+{
+<text>
+            <p class="m-small" style="margin-top:10px">No free times published yet.</p>
+          </text>
+}
+          @if (Model.Expert.IsConsultant() && Model.Slots.Any())
+{
+<text>
+            <a href="@(Routes.To("bookings.choose", new { expert = Model.Expert.ExpertId }))" class="m-btn m-btn-primary m-btn-block" style="margin-top:18px">Choose a time</a>
+          </text>
+}
+          <div class="assure">
+            <span><i class="bi bi-shield-check"></i> Payment released after the session</span>
+            <span><i class="bi bi-arrow-counterclockwise"></i> Free cancellation up to @(Config.Masar.FreeCancelHours) hours before</span>
+            <span><i class="bi bi-receipt"></i> Tax invoice issued automatically</span>
+          </div>
+        </div>
+        @if (Model.ApprovedDocuments.Any())
+{
+<text>
+          <div class="card pad" style="margin-top:22px">
+            <h4 class="m-h4">Verified documents</h4>
+            @foreach (var doc in Model.ApprovedDocuments)
+{
+<text>
+              <div class="docline"><i class="bi bi-patch-check-fill"></i> @(doc.DocumentType)</div>
+            </text>
+}
+            <p class="m-small" style="margin-top:12px">Approved by the Masar team on @(Model.ApprovedDocuments.Max(x => x.SubmittedDate).Format("j M Y")).</p>
+          </div>
+        </text>
+}
+      </text>
+}
+    </aside>
+  </div>
+</div>

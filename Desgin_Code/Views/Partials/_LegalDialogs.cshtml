@@ -1,0 +1,100 @@
+@{
+    var commission = Helpers.ToInt32((Config.Masar.Commission * 100));
+    var vat = Helpers.ToInt32((Config.Masar.Vat * 100));
+    var support = Config.Masar.SupportEmail;
+}
+
+<div class="ms-dialog ms-legal" id="ms-terms" hidden>
+  <div class="card pad" role="dialog" aria-modal="true" aria-labelledby="ms-terms-h">
+    <div class="ms-legal-h">
+      <div><span class="m-eyebrow">Masar</span><h3 class="m-h3" id="ms-terms-h">Terms of use</h3></div>
+      <button type="button" class="ms-x" data-ms-close aria-label="Close"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="ms-legal-b">
+      <h4 class="m-h4">1. What Masar is</h4>
+      <p class="m-body">Masar introduces clients to verified experts in Saudi Arabia and holds the money
+        until the work is done. The expert gives the advice or the service; Masar is not a party to it.</p>
+
+      <h4 class="m-h4">2. Your account</h4>
+      <p class="m-body">One account per person, with a real name, a reachable email and a Saudi mobile
+        number. Keep your password to yourself. An expert account stays Pending until our team has read
+        the licences and certificates that were uploaded.</p>
+
+      <h4 class="m-h4">3. What you pay</h4>
+      <p class="m-body">Every price on Masar is shown in full before you confirm: the expert's price, a
+        @(commission)% platform commission and @(vat)% VAT on the price. Nothing is charged until
+        you press the pay button, and the amount on the invoice is the amount you were shown.</p>
+
+      <h4 class="m-h4">4. What the expert receives</h4>
+      <p class="m-body">The expert receives the price less the @(commission)% commission. Masar holds
+        it until the consultation or the service is marked completed, and releases it then.</p>
+
+      <h4 class="m-h4">5. Changing your mind</h4>
+      <p class="m-body">A consultation cancelled more than @(Config.Masar.FreeCancelHours) hours
+        before it starts is refunded in full. Later than that the session is kept. If the expert cancels,
+        you are refunded in full whenever it happens.</p>
+
+      <h4 class="m-h4">6. Behaviour</h4>
+      <p class="m-body">Keep the conversation inside the booking, pay through Masar, and write reviews
+        only about work you really bought. Accounts that go around the platform or abuse other people
+        are blocked.</p>
+
+      <h4 class="m-h4">7. Closing your account</h4>
+      <p class="m-body">You can close your account at any time once no booking or proposal is still open.
+        Your email and phone number are anonymised; invoices and reviews stay, because they belong to the
+        other side of the deal too.</p>
+
+      <h4 class="m-h4">8. Questions</h4>
+      <p class="m-body">Write to @(support) and we answer within one working day. These terms follow
+        the laws of the Kingdom of Saudi Arabia.</p>
+    </div>
+    <div class="ms-legal-f">
+      <p class="m-small">Last updated @(Clock.Now.Format("j F Y"))</p>
+      <button type="button" class="m-btn m-btn-primary" data-ms-close>I have read this</button>
+    </div>
+  </div>
+</div>
+
+<div class="ms-dialog ms-legal" id="ms-privacy" hidden>
+  <div class="card pad" role="dialog" aria-modal="true" aria-labelledby="ms-privacy-h">
+    <div class="ms-legal-h">
+      <div><span class="m-eyebrow">Masar</span><h3 class="m-h3" id="ms-privacy-h">Privacy policy</h3></div>
+      <button type="button" class="ms-x" data-ms-close aria-label="Close"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="ms-legal-b">
+      <h4 class="m-h4">1. What we keep</h4>
+      <p class="m-body">Your name, email, phone number and city; your photo if you upload one; and for an
+        expert, the specialization, experience, bio and the verification documents our team reads.</p>
+
+      <h4 class="m-h4">2. What the work creates</h4>
+      <p class="m-body">Your bookings, service requests, proposals, messages, files, payments and reviews
+        are stored so that both sides of a deal can look them up later.</p>
+
+      <h4 class="m-h4">3. Who can see it</h4>
+      <p class="m-body">Your name, city and photo are visible to the expert you book, and an expert's
+        public profile is visible to everyone. Messages and files are visible only inside that booking.
+        Our admins can see what they need to verify experts and settle payments. Verification documents
+        are never shown to clients.</p>
+
+      <h4 class="m-h4">4. Card details</h4>
+      <p class="m-body">Masar never stores a full card number. A payment keeps only the method, the last
+        four digits and the amount, so you can recognise it on an invoice.</p>
+
+      <h4 class="m-h4">5. Email</h4>
+      <p class="m-body">Masar does not send marketing email. Everything that happens on your account is
+        shown in the notifications bell when you log in.</p>
+
+      <h4 class="m-h4">6. How long</h4>
+      <p class="m-body">Anything with a payment attached is kept for the period Saudi accounting rules
+        require. Everything else is removed or anonymised when you close your account.</p>
+
+      <h4 class="m-h4">7. Your choices</h4>
+      <p class="m-body">You can read and correct your details on your profile page at any time, and ask
+        us for a copy or for a correction at @(support).</p>
+    </div>
+    <div class="ms-legal-f">
+      <p class="m-small">Last updated @(Clock.Now.Format("j F Y"))</p>
+      <button type="button" class="m-btn m-btn-primary" data-ms-close>I have read this</button>
+    </div>
+  </div>
+</div>

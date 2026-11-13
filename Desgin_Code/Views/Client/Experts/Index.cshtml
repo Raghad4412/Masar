@@ -1,0 +1,283 @@
+@model Masar.ViewModels.Client.ExpertsIndexViewModel
+@{
+    Layout = "~/Views/Shared/_App.cshtml";
+    ViewData["navItem"] = "bookings";
+    ViewData["title"] = Model.Heading.Title + " - Masar";
+}
+@{
+    var prices = new Dictionary<string, object?> { [""] = "Any price", ["100-400"] = "Up to 400", ["400-600"] = "400 - 600", ["600-1000"] = "600 - 1,000", ["1000-20000"] = "Over 1,000" };
+    var ratings = new Dictionary<string, object?> { [""] = "Any rating", ["4.5"] = "4.5 and above", ["4"] = "4.0 and above", ["3"] = "3.0 and above" };
+    var whens = new Dictionary<string, object?> { [""] = "Any time", ["today"] = "Today", ["week"] = "This week" };
+    var years = new Dictionary<string, object?> { [""] = "Any experience", ["5"] = "5 years or more", ["10"] = "10 years or more" };
+    var activeCount = Model.Filters.Count();
+}
+
+@section Crumb {
+
+  <span>Home</span><i class="bi bi-chevron-right"></i>@if (Model.Heading.Crumb != "Find an Expert")
+{
+<text><a href="@(Routes.To("experts.index"))">Find an Expert</a><i class="bi bi-chevron-right"></i></text>
+}<span class="cur">@(Model.Heading.Crumb)</span>
+
+}
+
+<div class="wrap">
+  <div class="page-h">
+    <div><h1 class="m-h1">@(Model.Heading.Title)</h1>
+      <p class="m-body">@(Model.Total) @(Helpers.Plural("consultant", Model.Total)) @if (Helpers.Truthy(Model.Filters))
+{
+<text> match your filters </text>
+}
+else
+{
+<text> verified in Legal, Finance and Business </text>
+}</p></div>
+    <form class="searchline" method="GET" action="@(Http.Url())">
+      @foreach (var (k, v) in Http.QueryExcept("q", "sort", "page").Pairs())
+{
+<text><input type="hidden" name="@(k)" value="@(v)"></text>
+}
+      <a class="ms-filter-btn" href="#ms-filters" data-ms-drawer="ms-filters">
+        <i class="bi bi-sliders"></i> <span>Filters</span>
+        @if (Helpers.Truthy(activeCount))
+{
+<text><span class="n">@(activeCount)</span></text>
+}
+      </a>
+      <div class="m-input" style="width:300px">
+        <input type="search" name="q" value="@(Http.Query("q"))" maxlength="80" placeholder="Search by name or keyword"
+               style="flex:1;min-width:0;border:0;outline:0;background:transparent;font:inherit;color:inherit;padding:0">
+        <button type="submit" aria-label="Search" style="border:0;background:none;padding:0;cursor:pointer;color:inherit"><i class="bi @(Helpers.Truthy(Http.Query("q")) ? "bi-x-circle" : "bi-search")"></i></button>
+      </div>
+      <div class="m-input" style="width:190px">
+        <select name="sort" onchange="this.form.submit()" aria-label="Sort the results">
+          <option value="rating" @(Http.Query("sort", "rating") == "rating" ? "selected" : "")>Sort: Top rated</option>
+          <option value="price" @(Http.Query("sort") == "price" ? "selected" : "")>Sort: Price, low to high</option>
+          <option value="experience" @(Http.Query("sort") == "experience" ? "selected" : "")>Sort: Experience</option>
+        </select>
+        <i class="bi bi-chevron-down"></i>
+      </div>
+    </form>
+  </div>
+
+  @if (Helpers.Truthy(Model.Filters))
+{
+<text>
+    <div class="chips-row">
+      <span class="m-small">Active filters:</span>
+      @foreach (var f in Model.Filters)
+{
+<text>
+        <a class="fchip" href="@(f.Url)">@(f.Label) <i class="bi bi-x"></i></a>
+      </text>
+}
+      <a class="m-link" href="@(Http.Url())">Clear all</a>
+    </div>
+  </text>
+}
+
+  <section>
+    @if (!Model.Experts.Any())
+{
+<text>
+      <div class="empty">
+        @await Html.PartialAsync("~/Views/Svg/_EmptySearch.cshtml")
+        <h3 class="m-h3" style="margin-top:24px">No expert matches these filters</h3>
+        <p class="m-body" style="max-width:460px;margin:10px auto 0">There is no consultant that matches every
+          filter you chose. Try widening one of the filters.</p>
+        <div class="d-flex gap-3" style="justify-content:center;margin-top:26px">
+          <a href="@(Http.Url())" class="m-btn m-btn-outline">Clear all filters</a>
+          <a href="#ms-filters" class="m-btn m-btn-primary" data-ms-drawer="ms-filters"><i class="bi bi-sliders"></i> Change the filters</a>
+        </div>
+        @if (Helpers.Truthy(Model.Suggestions))
+{
+<text>
+          <div class="sugg">
+            <p class="m-small" style="margin-bottom:12px">You could also try:</p>
+            @foreach (var s in Model.Suggestions)
+{
+<text><a class="fchip" href="@(s.Url)">@(s.Label)</a></text>
+}
+          </div>
+        </text>
+}
+      </div>
+    </text>
+}
+else
+{
+<text>
+      <div class="res-h"><span class="m-small"><b>@(Model.Total)</b> @(Helpers.Plural("consultant", Model.Total))</span>
+        <span class="m-small">Showing @((Model.Page - 1) * Model.PerPage + 1) - @(Math.Min(Model.Page * Model.PerPage, Model.Total))</span></div>
+      <div class="egrid">
+        @foreach (var expert in Model.Experts)
+{
+<text>
+          @await Html.PartialAsync("~/Views/Components/_ExpertCard.cshtml", new ExpertCardModel { Expert = expert, Stats = Model.Stats, TopRated = Model.Stats.IsTopRated(expert) })
+        </text>
+}
+      </div>
+      @if (Model.Pages > 1)
+{
+<text>
+        <div class="pager">
+          @for (var p = 1; p <= Model.Pages; p++)
+{
+<text>
+            <a class="pg @Html.Raw((p == Model.Page ? " on " : ""))" href="@(Http.FullUrlWithQuery(new Dictionary<string, object?> { ["page"] = p }))">@(p)</a>
+          </text>
+}
+          @if (Model.Page < Model.Pages)
+{
+<text>
+            <a class="pg nx" href="@(Http.FullUrlWithQuery(new Dictionary<string, object?> { ["page"] = Model.Page + 1 }))">Next <i class="bi bi-chevron-right"></i></a>
+          </text>
+}
+        </div>
+      </text>
+}
+    </text>
+}
+  </section>
+</div>
+
+<div class="ms-drawer from-left" id="ms-filters">
+  <a class="ms-drawer-veil" href="#" aria-label="Close the filters" data-ms-drawer-close></a>
+  <form class="ms-drawer-panel" method="GET" action="@(Http.Url())"
+        role="dialog" aria-modal="true" aria-labelledby="ms-filters-h">
+    @if (Helpers.Truthy(Http.Query("q")))
+{
+<text><input type="hidden" name="q" value="@(Http.Query("q"))"></text>
+}
+    @if (Helpers.Truthy(Http.Query("sort")))
+{
+<text><input type="hidden" name="sort" value="@(Http.Query("sort"))"></text>
+}
+
+    <header class="ms-drawer-h">
+      <div>
+        <span class="m-eyebrow">Find an expert</span>
+        <h3 class="m-h3" id="ms-filters-h">Filters</h3>
+      </div>
+      <a class="ms-x" href="#" aria-label="Close" data-ms-drawer-close><i class="bi bi-x-lg"></i></a>
+    </header>
+
+    <div class="ms-drawer-b">
+      @if (Helpers.Truthy(activeCount))
+{
+<text>
+        <div class="ms-fsec">
+          <span class="h">@(activeCount) @(Helpers.Plural("filter", activeCount)) on now</span>
+          <div class="ms-chiprow">
+            @foreach (var f in Model.Filters)
+{
+<text>
+              <a class="fchip on" href="@(f.Url)">@(f.Label) <i class="bi bi-x"></i></a>
+            </text>
+}
+          </div>
+        </div>
+      </text>
+}
+
+      <div class="ms-fsec">
+        <label class="h" for="f-spec">Specialization</label>
+        <div class="m-input @Html.Raw((Helpers.Truthy(Http.Query("spec")) ? " sel " : ""))">
+          <select id="f-spec" name="spec">
+            <option value="">All specializations</option>
+            @foreach (var s in Model.Specializations)
+{
+<text><option value="@(s)" @(Http.Query("spec") == s ? "selected" : "")>@(s)</option></text>
+}
+          </select>
+          <i class="bi bi-chevron-down"></i>
+        </div>
+      </div>
+
+      <div class="ms-fsec">
+        <label class="h" for="f-city">City</label>
+        <div class="m-input @Html.Raw((Helpers.Truthy(Http.Query("city")) ? " sel " : ""))">
+          <select id="f-city" name="city">
+            <option value="">All cities</option>
+            @foreach (var c in Config.Masar.Cities)
+{
+<text><option value="@(c)" @(Http.Query("city") == c ? "selected" : "")>@(c)</option></text>
+}
+          </select>
+          <i class="bi bi-chevron-down"></i>
+        </div>
+      </div>
+
+      <div class="ms-fsec">
+        <span class="h">Price for one session <em>SAR</em></span>
+        <div class="ms-pick">
+          @foreach (var (value, label) in prices.Pairs())
+{
+<text>
+            <label class="ms-pk">
+              <input class="ms-input" type="radio" name="price" value="@(value)" @(Http.Query("price", "") == value ? "checked" : "")>
+              <span>@(label)</span>
+            </label>
+          </text>
+}
+        </div>
+      </div>
+
+      <div class="ms-fsec">
+        <span class="h">Rating</span>
+        <div class="ms-pick">
+          @foreach (var (value, label) in ratings.Pairs())
+{
+<text>
+            <label class="ms-pk">
+              <input class="ms-input" type="radio" name="rating" value="@(value)" @(Http.Query("rating", "") == value ? "checked" : "")>
+              <span>@if (Helpers.Truthy(value))
+{
+<text><i class="bi bi-star-fill"></i> </text>
+}@(label)</span>
+            </label>
+          </text>
+}
+        </div>
+      </div>
+
+      <div class="ms-fsec">
+        <span class="h">Free in the next</span>
+        <div class="ms-pick">
+          @foreach (var (value, label) in whens.Pairs())
+{
+<text>
+            <label class="ms-pk">
+              <input class="ms-input" type="radio" name="availability" value="@(value)" @(Http.Query("availability", "") == value ? "checked" : "")>
+              <span>@(label)</span>
+            </label>
+          </text>
+}
+        </div>
+      </div>
+
+      <div class="ms-fsec">
+        <span class="h">Experience</span>
+        <div class="ms-pick">
+          @foreach (var (value, label) in years.Pairs())
+{
+<text>
+            <label class="ms-pk">
+              <input class="ms-input" type="radio" name="years" value="@(value)" @(Http.Query("years", "") == value ? "checked" : "")>
+              <span>@(label)</span>
+            </label>
+          </text>
+}
+        </div>
+      </div>
+
+      <p class="m-help" style="margin:0">Every filter is part of the web address, so a filtered search
+        can be bookmarked or sent to someone else.</p>
+    </div>
+
+    <footer class="ms-drawer-f">
+      <a class="m-btn m-btn-outline" href="@(Http.Url())">Clear all</a>
+      <button type="submit" class="m-btn m-btn-primary"><i class="bi bi-search"></i> Apply filters</button>
+    </footer>
+  </form>
+</div>

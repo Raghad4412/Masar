@@ -1,0 +1,82 @@
+@model Masar.ViewModels.Auth.LoginViewModel
+@{
+    Layout = "~/Views/Shared/_Auth.cshtml";
+    ViewData["title"] = "Log in - Masar";
+}
+<div class="m-split">
+  <aside class="m-side">
+    <img class="m-side-img" src="@(Routes.Asset("img/auth-handshake.jpg"))" alt="A client and a consultant shaking hands">
+    <div class="m-side-veil"></div>
+    @await Html.PartialAsync("~/Views/Svg/_AuthSidePath.cshtml")
+    <div class="m-side-in">
+      <div class="m-side-logo"><img src="@(Routes.Asset("img/masar-mark.png"))" alt="Masar"></div>
+      <h2 class="m-h2" style="margin-top:44px">Welcome back to<br>your business path.</h2>
+      <div class="m-pt"><i class="bi bi-check-circle-fill"></i><p>Your consultations, service requests and proposals in one project.</p></div>
+      <div class="m-pt"><i class="bi bi-check-circle-fill"></i><p>Chat with your experts and keep every file in one place.</p></div>
+      <div class="m-pt"><i class="bi bi-check-circle-fill"></i><p>Every invoice with the commission and VAT shown clearly.</p></div>
+      <div class="m-side-stats">
+        <div><div class="v">@(Helpers.NumberFormat(Model.VerifiedExperts))</div><div class="k">Verified experts</div></div>
+        <div><div class="v">@(Helpers.NumberFormat(Model.BookingsDone))</div><div class="k">Bookings done</div></div>
+        <div><div class="v">@(Helpers.NumberFormat(Model.AvgRating, 1))</div><div class="k">Average rating</div></div>
+      </div>
+    </div>
+  </aside>
+
+  <section class="m-pane">
+    <form class="m-form" method="POST" action="@(Routes.To("login.store"))">
+      @Html.AntiForgeryToken()
+      <a class="m-logo" href="@(Routes.To("home"))" style="margin-bottom:38px">
+        <img src="@(Routes.Asset("img/masar-mark.png"))" alt="Masar">
+        <span><span class="w">MASAR</span><span class="t">Your Business Partner</span></span>
+      </a>
+      <h1 class="m-h1">Log in to your account</h1>
+      <p class="m-body" style="margin:10px 0 @Html.Raw((Helpers.Truthy(Session("banner")) ? " 28px " : " 32px "))">Enter your email and password to continue.</p>
+
+      <div class="m-fg">
+        <label class="m-label" for="Email">Email address</label>
+        <div class="m-input @Html.Raw((Errors.GetBag("default").Has("Email") ? " err " : ""))">
+          <input id="Email" name="Email" type="email" required maxlength="150" autocomplete="email"
+                 placeholder="name@@example.com" value="@(Old("Email"))">
+          <i class="bi bi-envelope" style="color:#9BAFA6"></i>
+        </div>
+        @if (Errors.GetBag("default").Has("Email"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle"></i> @(Errors.GetBag("default").First("Email"))</p></text>
+}
+      </div>
+      <div class="m-fg">
+        <label class="m-label" for="Password">Password</label>
+        <div class="m-input @Html.Raw((Errors.GetBag("default").Has("Password") ? " err " : ""))">
+          <input id="Password" name="Password" type="password" required maxlength="64" autocomplete="current-password"
+                 placeholder="Enter your password">
+          <i class="bi @(Errors.Has("Password") ? "bi-eye-slash" : "bi-eye")" style="color:@(Errors.Has("Password") ? "var(--danger)" : "#9BAFA6")"></i>
+        </div>
+        @if (Errors.GetBag("default").Has("Password"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle"></i> @(Errors.GetBag("default").First("Password"))</p></text>
+}
+      </div>
+      <div class="d-flex align-items-center justify-content-between" style="margin-bottom:28px">
+        @{ Func<object?, IHtmlContent> slot1 = @<text><span class="m-small" style="color:var(--ink)">Keep me logged in</span></text>; }
+@await Html.PartialAsync("~/Views/Components/_Check.cshtml", new CheckModel { Name = "remember", Wrap = "ms-check d-flex align-items-center gap-2", Slot = slot1(null) })
+        <a class="m-link" href="@(Routes.To("password.request"))">Forgot password?</a>
+      </div>
+      <button type="submit" class="m-btn m-btn-primary m-btn-block">Log in</button>
+      <div class="m-secure"><i class="bi bi-shield-lock-fill"></i> Your data is protected with 256-bit encryption</div>
+      <div class="m-divider">New to Masar?</div>
+      <a href="@(Routes.To("register"))" class="m-btn m-btn-outline m-btn-block">Create a free account</a>
+      @if (!(Helpers.Truthy(Session("banner"))))
+{
+<text>
+        <p class="m-small" style="text-align:center;margin-top:26px">By continuing you agree to the <a href="#" class="ms-legal-l" data-ms-open="ms-terms">Terms of use</a> and the <a href="#" class="ms-legal-l" data-ms-open="ms-privacy">Privacy policy</a>.</p>
+      </text>
+}
+    </form>
+  </section>
+</div>
+
+@section Dialogs {
+
+  @await Html.PartialAsync("~/Views/Partials/_LegalDialogs.cshtml")
+
+}

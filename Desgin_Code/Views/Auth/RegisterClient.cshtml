@@ -1,0 +1,121 @@
+@model Masar.ViewModels.Auth.RegisterClientViewModel
+@{
+    Layout = "~/Views/Shared/_Auth.cshtml";
+    ViewData["title"] = "Create your account - Masar";
+}
+<div class="m-split">
+  <aside class="m-side">
+    <img class="m-side-img" src="@(Routes.Asset("img/auth-meeting.jpg"))" alt="Entrepreneurs meeting around a table">
+    <div class="m-side-veil"></div>
+    @await Html.PartialAsync("~/Views/Svg/_AuthSidePath.cshtml")
+    <div class="m-side-in">
+      <div class="m-side-logo"><img src="@(Routes.Asset("img/masar-mark.png"))" alt="Masar"></div>
+      <h2 class="m-h2" style="margin-top:44px">Start your path<br>in three minutes.</h2>
+      <div class="m-pt"><i class="bi bi-1-circle-fill"></i><p>Create your free account. Nothing to pay until you book.</p></div>
+      <div class="m-pt"><i class="bi bi-2-circle-fill"></i><p>Tell us your budget and interests so we can match the right experts and ideas.</p></div>
+      <div class="m-pt"><i class="bi bi-3-circle-fill"></i><p>Book a consultation or post a service request the same day.</p></div>
+      <div class="m-side-stats">
+        <div><div class="v">@(Model.SpecializationCount)</div><div class="k">Specializations</div></div>
+        <div><div class="v">@(Helpers.NumberFormat(Model.VerifiedExperts))</div><div class="k">Verified experts</div></div>
+        <div><div class="v">@(Helpers.Truthy(Model.FirstReplyHours) ? Model.FirstReplyHours + "h" : "-")</div><div class="k">Average first reply</div></div>
+      </div>
+    </div>
+  </aside>
+
+  <section class="m-pane">
+    <form class="m-form m-form-wide" method="POST" action="@(Routes.To("register.store", new { @as = "client" }))">
+      @Html.AntiForgeryToken()
+      <a class="m-logo" href="@(Routes.To("home"))" style="margin-bottom:30px">
+        <img src="@(Routes.Asset("img/masar-mark.png"))" alt="Masar">
+        <span><span class="w">MASAR</span><span class="t">Your Business Partner</span></span>
+      </a>
+      <h1 class="m-h1">Create your account</h1>
+      <p class="m-body" style="margin:10px 0 26px">Choose how you want to use Masar.</p>
+
+      <div class="m-seg">
+        <a class="on" href="@(Routes.To("register", new { @as = "client" }))"><i class="bi bi-person"></i> I am a client</a>
+        <a href="@(Routes.To("register", new { @as = "expert" }))"><i class="bi bi-briefcase"></i> I am an expert</a>
+      </div>
+
+      <div class="m-two">
+        @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "first_name", Label = "First name", Required = true, Attrs = new AttributeBag { ["maxlength"] = "50", ["autocomplete"] = "given-name" } })
+        @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "last_name", Label = "Last name", Required = true, Attrs = new AttributeBag { ["maxlength"] = "50", ["autocomplete"] = "family-name" } })
+      </div>
+      <div class="m-two">
+        @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Email", Label = "Email address", Type = "email", Required = true, Placeholder = "name@example.com", Attrs = new AttributeBag { ["maxlength"] = "150", ["autocomplete"] = "email" } })
+        @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Phone", Label = "Phone number", Type = "tel", Required = true, Placeholder = "+966 5X XXX XXXX", Attrs = new AttributeBag { ["maxlength"] = "17", ["inputmode"] = "tel", ["data-ms-phone"] = "", ["pattern"] = "^(\\+966|00966|966|0)\\s?5[0-9](\\s?[0-9]){7}$", ["autocomplete"] = "tel" } })
+      </div>
+      <div class="m-two">
+        @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "City", Label = "City", Options = Model.Cities, Blank = "Choose your city", Required = true, Icon = "bi-chevron-down" })
+        @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Budget", Label = "Your budget (SAR)", Options = Model.Budgets, Blank = "Choose your budget", Required = true, Icon = "bi-chevron-down" })
+      </div>
+      <div class="m-fg">
+        <label class="m-label">Your interests</label>
+        
+        <div class="ms-chiprow @Html.Raw((Errors.GetBag("default").Has("interests") ? " err " : ""))">
+          @foreach (var interest in Model.Interests)
+{
+<text>
+            @{ Func<object?, IHtmlContent> slot7 = @<text>@(interest)</text>; }
+@await Html.PartialAsync("~/Views/Components/_Check.cshtml", new CheckModel { Name = "interests[]", Value = interest, Wrap = "fchip", Checked = OldMany("interests").Contains(interest), Slot = slot7(null) })
+          </text>
+}
+        </div>
+        @if (Errors.GetBag("default").Has("interests"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle"></i> @(Errors.GetBag("default").First("interests"))</p></text>
+}
+        <p class="m-help">Used to suggest business ideas and match you with the right experts.</p>
+      </div>
+      <div class="m-fg">
+        
+        <label class="m-label" for="interest-other">Something else <span class="opt">Optional</span></label>
+        <div class="m-input"><input id="interest-other" name="interests[]" type="text" maxlength="30"
+               placeholder="An interest that is not in the list"
+               value="@(OldMany("interests").Where(i => !(Model.Interests.Contains(i))).FirstOrDefault())"><i class="bi bi-plus-circle" style="color:#9BAFA6"></i></div>
+      </div>
+      <div class="m-two">
+        <div class="m-fg">
+          <label class="m-label" for="Password">Password</label>
+          <div class="m-input @Html.Raw((Errors.GetBag("default").Has("Password") ? " err " : ""))">
+            <input id="Password" name="Password" type="password" required minlength="8" maxlength="64"
+                   autocomplete="new-password" pattern="^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9]).{8,64}$"
+                   data-ms-password="pw-hint" placeholder="Create a password">
+            <i class="bi bi-eye-slash" style="color:#9BAFA6"></i>
+          </div>
+          <div class="m-bars"><span></span><span></span><span></span><span></span></div>
+          @if (Errors.GetBag("default").Has("Password"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle"></i> @(Errors.GetBag("default").First("Password"))</p></text>
+}
+          <p class="m-help" id="pw-hint">Strong, 12 characters, letters and numbers.</p>
+        </div>
+        <div class="m-fg">
+          <label class="m-label" for="Password_confirmation">Confirm password</label>
+          <div class="m-input">
+            <input id="Password_confirmation" name="Password_confirmation" type="password" required minlength="8"
+                   maxlength="64" autocomplete="new-password" placeholder="Repeat your password">
+          </div>
+        </div>
+      </div>
+      <div class="d-flex align-items-start gap-2" style="margin:6px 0 26px">
+        @{ Func<object?, IHtmlContent> slot8 = @<text>
+          <span class="m-small" style="color:var(--ink)">I agree to the <a href="#" class="ms-legal-l" data-ms-open="ms-terms">Terms of use</a> and the <a href="#" class="ms-legal-l" data-ms-open="ms-privacy">Privacy policy</a>.</span>
+        </text>; }
+@await Html.PartialAsync("~/Views/Components/_Check.cshtml", new CheckModel { Name = "terms", Required = true, Wrap = "ms-check d-flex align-items-start gap-2", Slot = slot8(null) })
+      </div>
+      @if (Errors.GetBag("default").Has("terms"))
+{
+<text><p class="m-err" style="margin-top:-18px;margin-bottom:18px"><i class="bi bi-exclamation-circle"></i> @(Errors.GetBag("default").First("terms"))</p></text>
+}
+      <button type="submit" class="m-btn m-btn-primary m-btn-block">Create my account</button>
+      <p class="m-small" style="text-align:center;margin-top:22px">Already have an account? <a href="@(Routes.To("login"))" style="color:var(--teal);font-weight:600">Log in</a></p>
+    </form>
+  </section>
+</div>
+
+@section Dialogs {
+
+  @await Html.PartialAsync("~/Views/Partials/_LegalDialogs.cshtml")
+
+}

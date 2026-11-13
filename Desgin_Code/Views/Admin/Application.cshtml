@@ -1,0 +1,195 @@
+@model Masar.ViewModels.Admin.AdminApplicationViewModel
+@{
+    Layout = "~/Views/Shared/_Dash.cshtml";
+    ViewData["panel"] = "admin";
+    ViewData["dmeCaption"] = Model.DmeCaption;
+    ViewData["title"] = Model.User.FullName + " - Masar";
+    ViewData["dtitle"] = "Verification Queue";
+    ViewData["dcrumb"] = Model.User.FullName;
+}
+@{
+    var decided = Model.Documents.Where(r => Helpers.Truthy(r.Doc) && new[] { "Approved", "Rejected" }.Contains(r.Doc.Status)).Count();
+    var waiting = Model.Documents.Where(r => Helpers.Truthy(r.Doc) && new[] { "Uploaded", "In review" }.Contains(r.Doc.Status)).Count();
+    var missing = Model.Documents.Where(r => !Helpers.Truthy(r.Doc) && Helpers.Truthy(r.Required)).Count();
+}
+
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">The application</h3><p class="m-small">What the applicant sent Masar</p></div>
+    <div class="sp">@await Html.PartialAsync("~/Views/Components/_Status.cshtml", new StatusModel { Kind = "user", Value = Model.User.Status })</div></div>
+  <div class="dcb p">
+    <div class="ms-profile-hero">
+      @await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = Model.User, Box = "ava ava-xl", Fallback = "av av-xl" })
+      <div>
+        <h2 class="m-h3" style="font-size:22px">@(Model.User.FullName)</h2>
+        <p class="m-body" style="margin-top:4px">@(Model.Expert.Specialization) &middot; @(Model.Expert.ExperienceYears) @(Helpers.Plural("year", Model.Expert.ExperienceYears)) of experience</p>
+        <div class="ph-meta">
+          <span><i class="bi bi-geo-alt"></i> @(Model.User.City)</span>
+          <span><i class="bi bi-envelope"></i> @(Model.User.Email)</span>
+          <span><i class="bi bi-telephone"></i> @(Model.User.PhoneDisplay)</span>
+        </div>
+      </div>
+    </div>
+    <div class="ms-appbar">
+      <div><span class="k">Decided</span><b>@(decided) of @(Model.Documents.Count())</b></div>
+      <div><span class="k">Waiting for you</span><b>@(waiting)</b></div>
+      <div><span class="k">Still missing</span><b>@(missing)</b></div>
+      <div><span class="k">@(Model.Expert.IsConsultant() ? "Session price" : "Smallest service")</span><b>@(Helpers.Sar(Model.Expert.SessionPrice, 0)) SAR</b></div>
+      <div><span class="k">Profile strength</span><b>@(Model.Strength)%</b></div>
+    </div>
+  </div>
+</div>
+
+<div class="d2">
+
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Documents</h3><p class="m-small">Approve or reject each one. A rejection needs a reason</p></div>
+    <div class="sp">
+      @if (Model.Documents.Any(r => Helpers.Truthy(r.Doc) && (r.Doc.Status == "Uploaded")))
+{
+<text>
+        <form method="POST" action="@(Routes.To("admin.verification.assign", new { expert = Model.Expert.ExpertId }))">@Html.AntiForgeryToken()
+          <button type="submit" class="m-btn m-btn-primary m-btn-sm"><i class="bi bi-lightning-charge"></i> Assign to me</button>
+        </form>
+      </text>
+}
+    </div></div>
+  <div class="dcb p">
+    @foreach (var row in Model.Documents)
+{
+<text>
+      @{
+    var doc = row.Doc;
+    var state = Helpers.Truthy(doc) ? doc.Status : "Missing";
+    var open = Helpers.Truthy(doc) && new[] { "Uploaded", "In review" }.Contains(doc.Status);
+    var tone = new Dictionary<string, object?> { ["Approved"] = "ok", ["Rejected"] = "no", ["Missing"] = "gap" }[state] ?? "wait";
+}
+      <article class="ms-doc @(tone)">
+        <div class="ms-doc-h">
+          <span class="ic"><i class="bi @(Helpers.Truthy(row.Required) ? "bi-file-earmark-text" : "bi-file-earmark")"></i></span>
+          <div class="t">
+            <b>@(row.Type)</b>
+            @if (Helpers.Truthy(row.Required))
+{
+<text><span class="req">Required</span></text>
+}
+else
+{
+<text><span class="opt">Optional</span></text>
+}
+            <p class="m-small">@(Helpers.Truthy(doc) ? (Helpers.Truthy(doc.FileExists()) ? System.IO.Path.GetFileName(doc.FilePath) : "The file is not on disk") + " · submitted " + doc.SubmittedDate.Format("j M Y") : (Helpers.Truthy(row.Required) ? "The applicant has not uploaded this yet" : "Not uploaded, and not required"))</p>
+          </div>
+          @await Html.PartialAsync("~/Views/Components/_Status.cshtml", new StatusModel { Kind = "document", Value = state })
+        </div>
+
+        @if (Helpers.Truthy(doc) && Helpers.Truthy(doc.FileExists()))
+{
+<text>
+          <a class="ms-doc-file" href="@(Routes.Asset(doc.FilePath))" target="_blank" rel="noopener">
+            <i class="bi bi-paperclip"></i> <span>Open @(System.IO.Path.GetFileName(doc.FilePath))</span>
+            <i class="bi bi-box-arrow-up-right"></i></a>
+        </text>
+}
+else if (Helpers.Truthy(doc))
+{
+<text>
+          <p class="m-help" style="margin:0"><i class="bi bi-exclamation-triangle"></i>
+            The row points at @(System.IO.Path.GetFileName(doc.FilePath)), which is not in public/uploads. Ask the
+            applicant to upload it again.</p>
+        </text>
+}
+
+        @if (Helpers.Truthy(open))
+{
+<text>
+          <form method="POST" action="@(Routes.To("admin.verification.decide", new { document = doc.DocumentId }))" class="ms-doc-act">
+            @Html.AntiForgeryToken()
+            <div class="m-fg" style="margin:0">
+              <label class="m-label" for="reason-@(doc.DocumentId)">Reason, if you reject <span class="opt">10 characters or more</span></label>
+              <div class="m-input area"><textarea id="reason-@(doc.DocumentId)" name="reason" rows="2" maxlength="300"
+                        placeholder="Name what is wrong with this document."></textarea></div>
+            </div>
+            <div class="ms-doc-btns">
+              <button type="submit" name="status" value="Approved" class="m-btn m-btn-primary m-btn-sm"
+                      data-ms-confirm="@(row.Type) is accepted. Once every required document is approved, @(Model.User.FullName) becomes an Active expert and can receive clients."
+                      data-ms-confirm-title="Approve this document?"
+                      data-ms-confirm-ok="Approve it" data-ms-confirm-cancel="Let me read it again"><i class="bi bi-check-lg"></i> Approve</button>
+              <button type="submit" name="status" value="Rejected" class="m-btn m-btn-outline m-btn-sm"
+                      data-ms-confirm="@(Model.User.FullName) is told the reason you wrote above and can upload a new file. The account stays Pending."
+                      data-ms-confirm-title="Reject this document?"
+                      data-ms-confirm-ok="Reject it" data-ms-confirm-cancel="Go back"
+                      data-ms-confirm-tone="warn"><i class="bi bi-x-lg"></i> Reject</button>
+            </div>
+          </form>
+        </text>
+}
+else if (Helpers.Truthy(doc) && (doc.Status == "Rejected"))
+{
+<text>
+          <p class="m-help" style="margin:0"><i class="bi bi-arrow-repeat"></i>
+            Rejected. The applicant may upload a replacement, which comes back to this queue.</p>
+        </text>
+}
+else if (Helpers.Truthy(doc) && (doc.Status == "Approved"))
+{
+<text>
+          <p class="m-help" style="margin:0"><i class="bi bi-check-circle"></i> Approved, nothing left to do here.</p>
+        </text>
+}
+      </article>
+    </text>
+}
+
+    <div class="note" style="margin-top:18px"><i class="bi bi-shield-check"></i>
+      @(Helpers.Truthy(Model.ReadyForReview) ? "All three required documents are on file. The expert goes live the moment they are all approved." : "The applicant still has to upload at least one required document.")</div>
+  </div>
+</div>
+
+<div class="ms-rail">
+  <div class="dcard">
+    <div class="dch"><div><h3 class="m-h3">Profile strength</h3><p class="m-small">How complete the applicant's profile is</p></div></div>
+    <div class="dcb p"><div class="center">@Html.Raw(C.Ring(Model.Strength))</div></div>
+  </div>
+  <div class="dcard">
+    <div class="dch"><div><h3 class="m-h3">What to check</h3><p class="m-small">Masar verification rules</p></div></div>
+    <div class="dcb p"><div class="ckl">
+        <div><i class="bi bi-check-circle-fill"></i> The professional certificate names the applicant</div>
+        <div><i class="bi bi-check-circle-fill"></i> The commercial registration is valid and the name matches the account</div>
+        <div><i class="bi bi-check-circle-fill"></i> The professional licence covers the specialization</div>
+        <div><i class="bi bi-check-circle-fill"></i> The portfolio belongs to the applicant</div>
+        <div><i class="bi bi-check-circle-fill"></i> The specialization matches the work shown</div>
+      </div>
+      <div class="note" style="margin-top:18px"><i class="bi bi-clock-history"></i>
+        Answer every application within 2 working days. A rejection must name the reason.</div></div>
+  </div>
+  <div class="dcard">
+    <div class="dch"><div><h3 class="m-h3">What clients would read</h3><p class="m-small">The bio and the price on the public profile</p></div></div>
+    <div class="dcb p">
+      <p class="m-body">@(Helpers.Or(Model.Expert.Bio, "No bio written yet."))</p>
+      <div class="pl" style="margin-top:16px"><span>@(Model.Expert.IsConsultant() ? "Session price" : "Smallest service accepted")</span><span>@(Helpers.Sar(Model.Expert.SessionPrice, 0)) SAR</span></div>
+      <div class="pl" style="border-bottom:0"><span>Portfolio link</span>
+        <span>@if (Helpers.Truthy(Model.Expert.PortfolioLink))
+{
+<text><a class="m-link" href="@(Model.Expert.PortfolioLink)" target="_blank" rel="noopener">@(Helpers.Limit(Model.Expert.PortfolioLink, 28))</a></text>
+}
+else
+{
+<text> none given </text>
+}</span></div>
+      @if (Model.Portfolio.Any())
+{
+<text>
+        <h4 class="m-h4" style="margin:20px 0 12px">Portfolio items</h4>
+        <div class="pgrid" style="margin-top:0">
+          @foreach (var item in Model.Portfolio)
+{
+<text>
+            <figure class="pitem"><img src="@(item.Image)" alt="@(item.Title)"><figcaption>@(item.Title)</figcaption></figure>
+          </text>
+}
+        </div>
+      </text>
+}
+    </div>
+  </div>
+</div>
+</div>

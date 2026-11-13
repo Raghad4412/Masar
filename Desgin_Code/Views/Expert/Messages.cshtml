@@ -1,0 +1,38 @@
+@model Masar.ViewModels.ExpertArea.ExpertMessagesViewModel
+@{
+    Layout = "~/Views/Shared/_Dash.cshtml";
+    ViewData["panel"] = "expert";
+    ViewData["dmeCaption"] = Model.DmeCaption;
+    ViewData["title"] = "Messages - Masar";
+    ViewData["dtitle"] = "Messages";
+    ViewData["dcrumb"] = "Messages";
+}
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Your chats</h3><p class="m-small">Every conversation lives inside one booking or one service</p></div></div>
+  <div class="dcb p"><div>
+      @if (Model.Threads.Any())
+{
+    foreach (var thread in Model.Threads)
+    {
+<text>
+        @{
+    var model_ = thread.Model;
+    var isSession = thread.Kind == "session";
+    var who = model_.Client?.User;
+    var url = Helpers.Truthy(isSession) ? Routes.To("expert.session.show", new { session = model_.ConsultationSessionId }) : Routes.To("expert.service.show", new { serviceRequest = model_.ServiceRequestId });
+}
+        <a class="dli" href="@(url)">@await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = who, Box = "ava ava-sm", Fallback = "av av-sm" })
+          <div><b>@(who?.FullName)</b><p class="m-small">@(Helpers.Truthy(isSession) ? model_.SessionTopic : model_.Title) &middot; @(Helpers.Truthy(isSession) ? model_.Reference : model_.Reference)</p></div>
+          <span class="tm">@(Helpers.ParseDate(thread.Last).Format("j M"))<span>@(Helpers.ParseDate(thread.Last).Format("H:i"))</span></span></a>
+      </text>
+    }
+}
+else
+{
+<text>
+        <p class="m-small" style="padding:18px 0">No chats yet. A chat opens as soon as a client books you
+          or accepts your proposal.</p>
+      </text>
+}
+    </div></div>
+</div>

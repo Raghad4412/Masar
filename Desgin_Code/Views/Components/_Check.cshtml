@@ -1,0 +1,20 @@
+@model CheckModel
+@{
+    var name = Model.Name;
+    var value = Model.Value;
+    var @checked = Model.Checked;
+    var required = Model.Required;
+    var wrap = Model.Wrap;
+    var attrs = Model.Attrs;
+    var slot = Model.Slot;
+}
+@{
+    var old = Old(name);
+    var isOn = old == null ? @checked : (OldMany(name).Contains(Convert.ToString(value)) || Convert.ToString(old) == Convert.ToString(value));
+}
+<label class="@(wrap)">
+  <input class="ms-input" type="checkbox" name="@(name)" value="@(value)"
+         @Html.Raw((required ? " required " : "")) @(Helpers.Truthy(isOn) ? "checked" : "") @Html.Raw((attrs).ToString())>
+  <span class="m-check @(Helpers.Truthy(isOn) ? "on" : "")"><i class="bi bi-check-lg"></i></span>
+  @(slot)
+</label>

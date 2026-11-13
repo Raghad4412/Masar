@@ -1,0 +1,111 @@
+@model Masar.ViewModels.Client.IdeaCreateViewModel
+@{
+    Layout = "~/Views/Shared/_App.cshtml";
+    ViewData["navItem"] = "bookings";
+    ViewData["title"] = "Business Idea Package - Masar";
+}
+@section Crumb {
+
+  <span>Home</span><i class="bi bi-chevron-right"></i><a href="@(Routes.To("services.index"))">Services</a><i class="bi bi-chevron-right"></i><span class="cur">Business Idea Package</span>
+
+}
+
+<form method="POST" action="@(Routes.To("ideas.store"))">
+  @Html.AntiForgeryToken()
+  <div class="wrap">
+    <div class="page-h">
+      <div><h1 class="m-h1">Business Idea Package</h1>
+        <p class="m-body">Tell us your budget, your interests and your city. Within three working days
+          you receive three business ideas that fit all three, each with an estimated start-up cost.</p></div>
+    </div>
+
+    <div class="bcols">
+      
+      <div>
+        <div class="card pad">
+          <div class="ms-step-h"><span class="n">1</span>
+            <div><h3 class="m-h3">How much can you invest?</h3>
+              <p class="m-small">Every idea we send fits inside this range, start-up cost included.</p></div></div>
+          @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Budget", Options = Config.Masar.Budgets, Blank = "Choose your budget", Required = true, Icon = "bi-chevron-down", Value = Model.Client.Budget, ErrIcon = "bi-exclamation-circle-fill", Fg = "m-fg ms-step-f" })
+        </div>
+
+        <div class="card pad" style="margin-top:20px">
+          <div class="ms-step-h"><span class="n">2</span>
+            <div><h3 class="m-h3">What kind of business interests you?</h3>
+              <p class="m-small">Pick as many as you like. This is what the three ideas are matched against.</p></div></div>
+          <div class="m-fg ms-step-f">
+            
+            <div class="ms-chiprow @Html.Raw((Errors.GetBag("default").Has("interests") ? " err " : ""))">
+              @foreach (var interest in Config.Masar.Interests)
+{
+<text>
+                @{ Func<object?, IHtmlContent> slot2 = @<text>@(interest)</text>; }
+@await Html.PartialAsync("~/Views/Components/_Check.cshtml", new CheckModel { Name = "interests[]", Value = interest, Wrap = "fchip", Checked = Old("interests", Model.Client.InterestList).Contains(interest), Slot = slot2(null) })
+              </text>
+}
+            </div>
+            @if (Errors.GetBag("default").Has("interests"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle-fill"></i> @(Errors.GetBag("default").First("interests"))</p></text>
+}
+          </div>
+          <div class="m-fg" style="margin-bottom:0">
+            <label class="m-label" for="interest-other">Something else <span class="opt">Optional</span></label>
+            <div class="m-input"><input id="interest-other" name="interests[]" type="text" maxlength="30"
+                   placeholder="An interest that is not in the list"><i class="bi bi-plus-circle" style="color:#9BAFA6"></i></div>
+            <p class="m-help">Leave this empty if the chips above already cover it.</p>
+          </div>
+        </div>
+
+        <div class="card pad" style="margin-top:20px">
+          <div class="ms-step-h"><span class="n">3</span>
+            <div><h3 class="m-h3">Where will you open?</h3>
+              <p class="m-small">The market note and the start-up costs are written for this city.</p></div></div>
+          @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "City", Options = Config.Masar.Cities, Blank = "Choose your city", Required = true, Icon = "bi-chevron-down", Value = Model.User.City, ErrIcon = "bi-exclamation-circle-fill", Fg = "m-fg ms-step-f" })
+        </div>
+
+        <div class="note" style="margin-top:20px"><i class="bi bi-info-circle"></i>
+          These three answers are saved to your profile, so your expert searches and any later package
+          use them too. You can change them any time on your profile page.</div>
+      </div>
+
+      
+      <aside class="ms-buy">
+        <div class="card pad">
+          <div class="ms-buy-h">
+            <span class="ic"><i class="bi bi-lightbulb"></i></span>
+            <div><h3 class="m-h3">Business Idea Package</h3>
+              <p class="m-small">Three ideas, prepared by our team</p></div>
+          </div>
+          <div class="inc" style="margin-top:18px"><i class="bi bi-check-circle-fill"></i> Three business ideas matched to your budget, interests and city</div>
+          <div class="inc"><i class="bi bi-check-circle-fill"></i> An estimated start-up cost for each idea, split into services and consultations</div>
+          <div class="inc"><i class="bi bi-check-circle-fill"></i> A short market note for your city, and the first step to take</div>
+          <div class="inc"><i class="bi bi-check-circle-fill"></i> @(Config.Masar.IdeaValidityDays) days to choose the one you want to start</div>
+
+          <div class="pl" style="margin-top:20px"><span>Package price</span><span>@(Helpers.NumberFormat(Model.Price, 2))</span></div>
+          <div class="pl"><span>Platform commission (@(Helpers.ToInt32((Config.Masar.Commission * 100)))%)</span><span>@(Helpers.NumberFormat(Model.Commission, 2))</span></div>
+          <div class="pl"><span>VAT (@(Helpers.ToInt32((Config.Masar.Vat * 100)))%)</span><span>@(Helpers.NumberFormat(Model.Vat, 2))</span></div>
+          <div class="pt"><span>Total to pay</span><span class="tot">@(Helpers.NumberFormat(Model.Total, 2)) SAR</span></div>
+
+          <button type="submit" class="m-btn m-btn-primary m-btn-block" style="margin-top:18px">
+            Continue to payment <i class="bi bi-arrow-right"></i></button>
+          <a href="@(Routes.To("services.index"))" class="m-btn m-btn-outline m-btn-block" style="margin-top:10px">Cancel</a>
+
+          <div class="ms-buy-safe"><i class="bi bi-shield-lock-fill"></i>
+            <p class="m-small">Nothing is charged until you confirm on the next screen. The total above
+              is the amount you will pay, with the commission and the VAT already in it.</p></div>
+        </div>
+
+        <div class="card pad ms-buy-when">
+          <b><i class="bi bi-clock-history"></i> What happens next</b>
+          <ol>
+            <li>You pay, and the request reaches our team.</li>
+            <li>We study your budget, your interests and your city.</li>
+            <li>Within three working days three ideas appear under Business ideas.</li>
+            <li>You choose one, and the other two close.</li>
+          </ol>
+        </div>
+      </aside>
+    </div>
+  </div>
+</form>

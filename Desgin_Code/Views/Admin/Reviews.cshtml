@@ -1,0 +1,81 @@
+@model Masar.ViewModels.Admin.AdminReviewsViewModel
+@{
+    Layout = "~/Views/Shared/_Dash.cshtml";
+    ViewData["panel"] = "admin";
+    ViewData["dmeCaption"] = Model.DmeCaption;
+    ViewData["title"] = "Reviews - Masar";
+    ViewData["dtitle"] = "Reviews";
+    ViewData["dcrumb"] = "Review moderation";
+}
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Reviews</h3><p class="m-small">Hiding a review removes it from the expert's rating</p></div></div>
+  <div class="dcb t">
+    <div class="tabsline">
+      <a href="@(Routes.To("admin.reviews"))" class="@(!Helpers.Truthy(Model.Visible) ? "on" : "")">All (@(Model.Counts.All))</a>
+      <a href="@(Routes.To("admin.reviews", new { visible = "shown" }))" class="@(Model.Visible == "shown" ? "on" : "")">Visible (@(Model.Counts.Shown))</a>
+      <a href="@(Routes.To("admin.reviews", new { visible = "hidden" }))" class="@(Model.Visible == "hidden" ? "on" : "")">Hidden (@(Model.Counts.Hidden))</a>
+      <span class="grow"></span>
+    </div>
+  </div>
+</div>
+@if (Model.Rows.Any())
+{
+    foreach (var review in Model.Rows)
+    {
+<text>
+  @{
+    var expert = review.Expert();
+}
+  <div class="card pad rev" style="margin-top:14px">
+    <div class="rev-h">
+      @await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = review.User, Box = "ava", Fallback = "av" })
+      <div><div class="m-h4">@(review.User.FullName)</div>
+        <p class="m-small">@(review.User.City) &middot; about @(expert?.User?.FullName ?? "an expert")
+          &middot; @(Helpers.Truthy(review.ConsultationSessionId) ? (review.Session?.Type?.TypeName ?? "Consultation") : (review.Request?.Type?.TypeName ?? "Service"))</p></div>
+      <div class="rev-r">@await Html.PartialAsync("~/Views/Components/_Stars.cshtml", new StarsModel { Rating = review.Rating })<p class="m-small">@(review.ReviewDate.Format("j M Y"))</p></div>
+    </div>
+    @if (Convert.ToString(review.Comment).Trim() != "")
+{
+<text><p class="m-body">@(review.Comment)</p></text>
+}
+    <div class="d-flex align-items-center gap-3" style="margin-top:12px">
+      @if (review.IsVisible)
+{
+<text>
+        <span class="m-chip chip-ok"><i class="bi bi-eye"></i> Visible on the profile</span>
+      </text>
+}
+else
+{
+<text>
+        <span class="st cancel">Hidden by an admin</span>
+      </text>
+}
+      <form method="POST" action="@(Routes.To("admin.reviews.toggle", new { review = review.ReviewId }))" style="margin-left:auto"
+            data-ms-confirm="@(review.IsVisible ? "The review leaves the public profile and the average rating is recalculated without it." : "The review goes back on the public profile and counts towards the average rating again.")"
+            data-ms-confirm-title="@(review.IsVisible ? "Hide this review?" : "Show this review again?")"
+            data-ms-confirm-ok="@(review.IsVisible ? "Hide the review" : "Show the review")" data-ms-confirm-cancel="Leave it as it is"
+            data-ms-confirm-tone="@(review.IsVisible ? "warn" : "ask")">@Html.AntiForgeryToken()
+        <button type="submit" class="m-btn m-btn-outline m-btn-sm">
+          <i class="bi @(review.IsVisible ? "bi-eye-slash" : "bi-eye")"></i> @(review.IsVisible ? "Hide this review" : "Show this review")</button>
+      </form>
+    </div>
+  </div>
+</text>
+    }
+}
+else
+{
+<text>
+  <div class="dcard"><div class="dcb p">
+    <div class="ms-empty"><span class="ic"><i class="bi bi-star"></i></span>
+      <b>No review matches this filter</b>
+      <p class="m-small">Try another tab, or go back to every review.</p></div></div></div>
+</text>
+}
+@if (Model.Pager.Total > 0)
+{
+<text>
+  <div class="dcard"><div class="dcb p" style="padding-top:4px">@await Html.PartialAsync("~/Views/Components/_Pager.cshtml", new PagerModel { Pager = Model.Pager, Unit = "review" })</div></div>
+</text>
+}

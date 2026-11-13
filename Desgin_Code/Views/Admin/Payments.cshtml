@@ -1,0 +1,108 @@
+@model Masar.ViewModels.Admin.AdminPaymentsViewModel
+@{
+    Layout = "~/Views/Shared/_Dash.cshtml";
+    ViewData["panel"] = "admin";
+    ViewData["dmeCaption"] = Model.DmeCaption;
+    ViewData["title"] = "Payments - Masar";
+    ViewData["dtitle"] = "Payments";
+    ViewData["dcrumb"] = "Payments";
+}
+<div class="kpis">
+  <div class="kpi">
+    <div class="kpi-t"><span class="kpi-ic "><i class="bi bi-shield-lock"></i></span><span class="kpi-l">Held in escrow</span></div>
+    <div class="kpi-v">@(Helpers.Sar(Model.Held, 0)) <span>SAR</span></div>
+    <p class="m-small" style="margin-top:10px">@(Model.Counts["Paid"]) @(Helpers.Plural("payment", Model.Counts["Paid"])) waiting for completion</p>
+  </div>
+  <div class="kpi">
+    <div class="kpi-t"><span class="kpi-ic green"><i class="bi bi-cash-coin"></i></span><span class="kpi-l">Released to experts</span></div>
+    <div class="kpi-v">@(Helpers.Sar(Model.Released, 0)) <span>SAR</span></div>
+    <p class="m-small" style="margin-top:10px">@(Model.Counts["Released"]) @(Helpers.Plural("payout", Model.Counts["Released"])) in total</p>
+  </div>
+  <div class="kpi">
+    <div class="kpi-t"><span class="kpi-ic gold"><i class="bi bi-cash-stack"></i></span><span class="kpi-l">Platform commission</span></div>
+    <div class="kpi-v">@(Helpers.Sar(Model.Commission, 0)) <span>SAR</span></div>
+    <p class="m-small" style="margin-top:10px">@(Helpers.ToInt32((Config.Masar.Commission * 100)))% of every Paid and Released payment</p>
+  </div>
+  <div class="kpi">
+    <div class="kpi-t"><span class="kpi-ic blue"><i class="bi bi-arrow-counterclockwise"></i></span><span class="kpi-l">Refunded</span></div>
+    <div class="kpi-v">@(Model.Counts["Refunded"] + Model.Counts["Partially refunded"])</div>
+    <p class="m-small" style="margin-top:10px">@(Model.Counts["Refunded"]) full, @(Model.Counts["Partially refunded"]) partial</p>
+  </div>
+</div>
+@{
+    var tabs = new List<TabLink>
+    {
+        new TabLink
+        {
+            Label = "All",
+            Count = Model.Counts["all"],
+            Url = Routes.To("admin.payments"),
+            On = string.IsNullOrEmpty(Model.Status),
+        },
+    };
+    foreach (var s in Model.Statuses)
+    {
+        tabs.Add(new TabLink
+        {
+            Label = s,
+            Count = Model.Counts[s],
+            Url = Routes.To("admin.payments", new { status = s }),
+            On = Model.Status == s,
+        });
+    }
+}
+@{ Func<object?, IHtmlContent> slot1 = @<text>
+  @if (Model.Rows.Any())
+{
+    foreach (var row in Model.Rows)
+    {
+<text>
+    @{
+    var who = row.Session?.Client?.User ?? row.Request?.Client?.User ?? row.Idea?.Client?.User;
+}
+    <tr>
+      <td class="nw"><b>@(row.Reference)</b></td>
+      <td class="nw">@(row.TargetLabel())<br><span class="m-small">@(row.Session?.Reference ?? row.Request?.Reference ?? row.Idea?.Reference)</span></td>
+      <td><div class="who">@await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = who, Box = "ava ava-sm", Fallback = "av av-sm" })<span>@(who?.FullName)</span></div></td>
+      <td class="nw">@(row.PaymentMethod)</td>
+      <td class="nw">@(row.PaymentDate.Format("j M Y"))<br><span class="m-small">@(row.PaymentDate.Format("H:i"))</span></td>
+      <td class="r"><b>@(Helpers.NumberFormat(Convert.ToDouble(row.Amount), 2))</b></td>
+      <td>@await Html.PartialAsync("~/Views/Components/_Status.cshtml", new StatusModel { Kind = "payment", Value = row.PaymentStatus })</td>
+      <td class="r">
+        @if (Model.Releasable.Contains(row.PaymentId))
+{
+<text>
+          <form method="POST" action="@(Routes.To("admin.payments.release", new { payment = row.PaymentId }))" style="display:inline"
+                data-ms-confirm="@(Helpers.NumberFormat(row.ExpertPayout(), 2)) SAR goes to the expert and @(row.Reference) is marked Released. This cannot be undone."
+                data-ms-confirm-title="Release this payment?"
+                data-ms-confirm-ok="Release the payment" data-ms-confirm-cancel="Keep it held"
+                data-ms-confirm-tone="warn">@Html.AntiForgeryToken()
+            <button type="submit" class="m-link" style="border:0;background:none;padding:0;font:inherit;cursor:pointer">Release</button>
+          </form>
+        </text>
+}
+else if (row.HasInvoice())
+{
+<text>
+          <a class="m-link" href="@(Routes.To("invoices.print", new { payment = row.PaymentId }))" target="_blank" rel="noopener">Invoice <i class="bi bi-box-arrow-up-right" style="font-size:10px"></i></a>
+        </text>
+}
+else
+{
+<text>
+          <span class="m-small">-</span>
+        </text>
+}
+      </td>
+    </tr>
+  </text>
+    }
+}
+else
+{
+<text>
+    <tr><td colspan="8"><p class="m-body" style="padding:18px 0">No payment matches this filter.</p></td></tr>
+  </text>
+}
+</text>; }
+@await Html.PartialAsync("~/Views/Components/_AdminTable.cshtml", new AdminTableModel { Pager = Model.Pager, Unit = "payment", Title = "Every payment", Note = "Amount = price + 20% commission + 15% VAT on the price", Tabs = tabs, Head = new List<HeadCell> { new HeadCell { Label = "Payment" }, new HeadCell { Label = "For" }, new HeadCell { Label = "Who" }, new HeadCell { Label = "Method" }, new HeadCell { Label = "Date" }, new HeadCell { Label = "Amount", Right = true }, new HeadCell { Label = "Status" }, new HeadCell { Label = "", Right = true } }, Slot = slot1(null) })

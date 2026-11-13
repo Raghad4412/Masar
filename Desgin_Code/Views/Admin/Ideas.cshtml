@@ -1,0 +1,48 @@
+@model Masar.ViewModels.Admin.AdminIdeasViewModel
+@{
+    Layout = "~/Views/Shared/_Dash.cshtml";
+    ViewData["panel"] = "admin";
+    ViewData["dmeCaption"] = Model.DmeCaption;
+    ViewData["title"] = "Business ideas - Masar";
+    ViewData["dtitle"] = "Business ideas";
+    ViewData["dcrumb"] = "Business ideas";
+}
+@{
+    var tabs = new List<TabLink>();
+    foreach (var (key, label) in new Dictionary<string, string> { ["all"] = "All", ["Requested"] = "Requested", ["In Study"] = "In study", ["Delivered"] = "Delivered", ["Chosen"] = "Chosen", ["Expired"] = "Expired" })
+    {
+        tabs.Add(new TabLink
+        {
+            Label = label,
+            Count = Model.Counts[key],
+            Url = key == "all" ? Routes.To("admin.ideas") : Routes.To("admin.ideas", new { status = key }),
+            On = key == "all" ? string.IsNullOrEmpty(Model.Status) : Model.Status == key,
+        });
+    }
+}
+@{ Func<object?, IHtmlContent> slot1 = @<text>
+  @if (Model.Rows.Any())
+{
+    foreach (var row in Model.Rows)
+    {
+<text>
+    <tr>
+      <td><b>@(row.IdeaName)</b><br><span class="m-small">@(row.Reference)</span></td>
+      <td><div class="who">@await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = row.Client?.User, Box = "ava ava-sm", Fallback = "av av-sm" })<span>@(row.Client?.User?.FullName)</span></div></td>
+      <td class="nw">@(row.Services.Count()) @(Helpers.Plural("service", row.Services.Count()))<br><span class="m-small">@(row.Consultations.Count()) @(Helpers.Plural("consultation", row.Consultations.Count()))</span></td>
+      <td class="r">@(row.EstimatedCost() > 0 ? Helpers.NumberFormat(row.EstimatedCost(), 2) : "-")</td>
+      <td class="nw">@(row.ExpirationDate?.Format("j M Y") ?? "-")</td>
+      <td>@await Html.PartialAsync("~/Views/Components/_Status.cshtml", new StatusModel { Kind = "idea", Value = row.Status })</td>
+      <td class="r"><a class="m-link" href="@(Routes.To("admin.ideas.show", new { idea = row.BusinessIdeaId }))">Open</a></td>
+    </tr>
+  </text>
+    }
+}
+else
+{
+<text>
+    <tr><td colspan="7"><p class="m-body" style="padding:18px 0">No package matches this filter.</p></td></tr>
+  </text>
+}
+</text>; }
+@await Html.PartialAsync("~/Views/Components/_AdminTable.cshtml", new AdminTableModel { Pager = Model.Pager, Unit = "package", Title = "Business Idea Packages", Note = "Prepare three ideas for every paid package", Tabs = tabs, Head = new List<HeadCell> { new HeadCell { Label = "Idea" }, new HeadCell { Label = "Client" }, new HeadCell { Label = "Lines" }, new HeadCell { Label = "Start-up cost", Right = true }, new HeadCell { Label = "Valid until" }, new HeadCell { Label = "Status" }, new HeadCell { Label = "", Right = true } }, Slot = slot1(null) })

@@ -1,0 +1,28 @@
+<div class="ms-menu" id="ms-user-menu" hidden>
+  <span class="ms-head"><b>@(AuthUser.FullName)</b><span>@(AuthUser.Email)</span></span>
+  @if (AuthUser.IsAdmin())
+{
+<text>
+    <a href="@(Routes.To("admin.overview"))"><i class="bi bi-speedometer2"></i> Overview</a>
+    <a href="@(Routes.To("admin.reports"))"><i class="bi bi-bar-chart"></i> Reports</a>
+    <a href="@(Routes.To("admin.settings"))"><i class="bi bi-gear"></i> Platform Settings</a>
+  </text>
+}
+else
+{
+<text>
+    <a href="@(Routes.To("expert.profile"))"><i class="bi bi-person-badge"></i> Profile and Verification</a>
+    <a href="@(Routes.To("expert.earnings"))"><i class="bi bi-wallet2"></i> Earnings and Payouts</a>
+    <a href="@(Routes.To("expert.settings"))"><i class="bi bi-gear"></i> Settings</a>
+  </text>
+}
+  <a href="@(Routes.To("notifications"))"><i class="bi bi-bell"></i> Notifications</a>
+  <hr>
+  <form method="POST" action="@(Routes.To("logout"))"
+        data-ms-confirm="You will need your email and password to come back in."
+        data-ms-confirm-title="Log out of Masar?"
+        data-ms-confirm-ok="Log me out" data-ms-confirm-cancel="Stay signed in"
+        data-ms-confirm-tone="logout">@Html.AntiForgeryToken()
+    <button type="submit" class="danger"><i class="bi bi-box-arrow-right"></i> Log out</button>
+  </form>
+</div>

@@ -1,0 +1,16 @@
+<div class="ms-menu" id="ms-user-menu" hidden>
+  <span class="ms-head"><b>@(AuthUser.FullName)</b><span>@(AuthUser.Email)</span></span>
+  <a href="@(Routes.To("profile"))"><i class="bi bi-person"></i> My profile</a>
+  <a href="@(Routes.To("bookings.index"))"><i class="bi bi-calendar3"></i> My bookings</a>
+  <a href="@(Routes.To("requests.index"))"><i class="bi bi-inbox"></i> My requests</a>
+  <a href="@(Routes.To("ideas.index"))"><i class="bi bi-lightbulb"></i> Business ideas</a>
+  <a href="@(Routes.To("notifications"))"><i class="bi bi-bell"></i> Notifications</a>
+  <hr>
+  <form method="POST" action="@(Routes.To("logout"))"
+        data-ms-confirm="You will need your email and password to come back in."
+        data-ms-confirm-title="Log out of Masar?"
+        data-ms-confirm-ok="Log me out" data-ms-confirm-cancel="Stay signed in"
+        data-ms-confirm-tone="logout">@Html.AntiForgeryToken()
+    <button type="submit" class="danger"><i class="bi bi-box-arrow-right"></i> Log out</button>
+  </form>
+</div>

@@ -1,0 +1,107 @@
+@model Masar.ViewModels.ExpertArea.ExpertReviewsViewModel
+@{
+    Layout = "~/Views/Shared/_Dash.cshtml";
+    ViewData["panel"] = "expert";
+    ViewData["dmeCaption"] = Model.DmeCaption;
+    ViewData["title"] = "Reviews - Masar";
+    ViewData["dtitle"] = "Reviews";
+    ViewData["dcrumb"] = "Reviews";
+}
+@{
+    var count = Model.Reviews.Count();
+    var five = Model.Reviews.Where(x => x.Rating == 5).Count();
+    var withWords = Model.Reviews.Where(r => Convert.ToString(r.Comment).Trim() != "").Count();
+}
+
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">How clients rate you</h3>
+      <p class="m-small">Only a client who paid for a session or a service can leave one</p></div>
+    <div class="sp"><span class="bigstars sm">@(Helpers.Truthy(Model.Expert.Rating) ? Helpers.NumberFormat(Convert.ToDouble(Model.Expert.Rating), 1) : "-") <i class="bi bi-star-fill"></i></span></div></div>
+  <div class="dcb p">
+    <div class="ms-rev-top">
+      <div class="ms-rev-score">
+        <b>@(Helpers.Truthy(Model.Expert.Rating) ? Helpers.NumberFormat(Convert.ToDouble(Model.Expert.Rating), 1) : "-")</b>
+        @await Html.PartialAsync("~/Views/Components/_Stars.cshtml", new StarsModel { Rating = Convert.ToDouble((Model.Expert.Rating ?? 0)), Size = "" })
+        <span class="m-small">@(count) @(Helpers.Plural("review", count))</span>
+      </div>
+      <div class="rbars">
+        @foreach (var (star, row) in Model.Distribution.Pairs())
+{
+<text>
+          <div class="rbar"><span>@(star)</span><i class="bi bi-star-fill"></i>
+            <span class="tr"><span class="fl" style="width:@(row.Percent)%"></span></span><span>@(row.Count)</span></div>
+        </text>
+}
+      </div>
+    </div>
+    <div class="ms-rev-facts">
+      <div><i class="bi bi-star-fill"></i><div><b>@(Helpers.Truthy(count) ? Helpers.ToInt32(Helpers.Round(five / count * 100)) : 0)%</b><span class="m-small">gave you five stars</span></div></div>
+      <div><i class="bi bi-chat-quote"></i><div><b>@(withWords)</b><span class="m-small">@(Helpers.Plural("review", withWords)) with a written comment</span></div></div>
+      <div><i class="bi bi-hand-thumbs-down"></i><div><b>@(Helpers.Truthy(count) ? Model.Reviews.Min(x => x.Rating) + " / 5" : "-")</b><span class="m-small">your lowest review</span></div></div>
+      <div><i class="bi bi-calendar-event"></i><div><b>@(Helpers.Truthy(count) ? Model.Reviews.Max(x => x.ReviewDate).Format("j M Y") : "-")</b><span class="m-small">most recent review</span></div></div>
+    </div>
+  </div>
+</div>
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Every review</h3>
+      <p class="m-small">Newest first. A review an admin hid is not shown here or in your average</p></div></div>
+  <div class="dcb p">
+    @if (Helpers.Truthy(count))
+{
+<text>
+      <div class="ms-rev-grid">
+        @foreach (var review in Model.Pager.Rows)
+{
+<text>
+          <article class="ms-rev">
+            <div class="ms-rev-h">
+              @await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = review.User, Box = "ava", Fallback = "av" })
+              <div><b>@(review.User.FullName)</b>
+                <p class="m-small">@(review.User.City) &middot; @(Helpers.Truthy(review.ConsultationSessionId) ? (review.Session?.Type?.TypeName ?? "Consultation") : (review.Request?.Type?.TypeName ?? "Service"))</p></div>
+              @await Html.PartialAsync("~/Views/Components/_Stars.cshtml", new StarsModel { Rating = review.Rating, Size = "" })
+            </div>
+            @if (Convert.ToString(review.Comment).Trim() != "")
+{
+<text>
+              <blockquote>@(review.Comment)</blockquote>
+            </text>
+}
+else
+{
+<text>
+              <p class="m-small" style="font-style:italic">Rated without a comment.</p>
+            </text>
+}
+            <div class="ms-rev-foot">
+              <span class="m-small"><i class="bi bi-calendar3"></i> @(review.ReviewDate.Format("j F Y"))</span>
+              @if (Helpers.Truthy(review.ConsultationSessionId))
+{
+<text>
+                <a class="m-link" href="@(Routes.To("expert.session.show", new { session = review.ConsultationSessionId }))">Open the session</a>
+              </text>
+}
+else if (Helpers.Truthy(review.ServiceRequestId))
+{
+<text>
+                <a class="m-link" href="@(Routes.To("expert.service.show", new { serviceRequest = review.ServiceRequestId }))">Open the service</a>
+              </text>
+}
+            </div>
+          </article>
+        </text>
+}
+      </div>
+      @await Html.PartialAsync("~/Views/Components/_Pager.cshtml", new PagerModel { Pager = Model.Pager, Unit = "review" })
+    </text>
+}
+else
+{
+<text>
+      <div class="ms-empty"><span class="ic"><i class="bi bi-star"></i></span>
+        <b>No reviews yet</b>
+        <p class="m-small">Your first completed booking can bring one. Clients are asked for a review as
+          soon as they mark the work completed.</p></div>
+    </text>
+}
+  </div>
+</div>

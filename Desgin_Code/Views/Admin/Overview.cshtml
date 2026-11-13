@@ -1,0 +1,88 @@
+@model Masar.ViewModels.Admin.AdminOverviewViewModel
+@{
+    Layout = "~/Views/Shared/_Dash.cshtml";
+    ViewData["panel"] = "admin";
+    ViewData["dmeCaption"] = Model.DmeCaption;
+    ViewData["title"] = "Platform Overview - Masar";
+    ViewData["dtitle"] = "Overview";
+    ViewData["dcrumb"] = "Overview";
+}
+<div class="kpis">
+  <div class="kpi">
+    <div class="kpi-t"><span class="kpi-ic "><i class="bi bi-people"></i></span>
+      <span class="kpi-l">Clients</span></div>
+    <div class="kpi-v">@(Helpers.NumberFormat(Model.Clients))</div>
+    <div class="kpi-b">@Html.Raw(C.Sparkline(Model.Sparklines.Clients, C.TEAL, "a1"))</div>
+    <p class="m-small" style="margin-top:10px">@(Model.NewClients) new @(Helpers.Plural("client", Model.NewClients)) this month</p>
+  </div>
+  <div class="kpi">
+    <div class="kpi-t"><span class="kpi-ic gold"><i class="bi bi-patch-check"></i></span>
+      <span class="kpi-l">Experts</span></div>
+    <div class="kpi-v">@(Helpers.NumberFormat(Model.Experts))</div>
+    <div class="kpi-b"><span class="delta flat">@(Model.Waiting) waiting</span>@Html.Raw(C.Sparkline(Model.Sparklines.Experts, C.AMBER, "a2"))</div>
+    <p class="m-small" style="margin-top:10px">@(Model.Waiting) @(Helpers.Plural("application", Model.Waiting)) in the verification queue</p>
+  </div>
+  <div class="kpi">
+    <div class="kpi-t"><span class="kpi-ic blue"><i class="bi bi-inbox"></i></span>
+      <span class="kpi-l">Requests this month</span></div>
+    <div class="kpi-v">@(Helpers.NumberFormat(Model.RequestsThisMonth))</div>
+    <div class="kpi-b">@Html.Raw(C.Sparkline(Model.Sparklines.Requests, C.INFO, "a3"))</div>
+    <p class="m-small" style="margin-top:10px">@(Model.ThreeProposalShare)% received at least three proposals</p>
+  </div>
+  <div class="kpi">
+    <div class="kpi-t"><span class="kpi-ic green"><i class="bi bi-cash-stack"></i></span>
+      <span class="kpi-l">Platform revenue</span></div>
+    <div class="kpi-v">@(Helpers.Sar(Model.Revenue, 0)) <span>SAR</span></div>
+    <div class="kpi-b">@Html.Raw(C.Sparkline(Model.Sparklines.Revenue, C.SAGE, "a4"))</div>
+    <p class="m-small" style="margin-top:10px">@(Helpers.ToInt32((Config.Masar.Commission * 100)))% commission on @(Helpers.Sar(Model.GrossThisMonth, 0)) SAR</p>
+  </div>
+</div>
+<div class="d2">
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Money paid through Masar</h3><p class="m-small">Gross value of every consultation and service</p></div><div class="sp"><span class="seg"><span class="on">8M</span><span>12M</span></span></div></div>
+  <div class="dcb ">@Html.Raw(C.Area(Model.PaidByMonth.Keys.ToList(), Model.PaidByMonth.Values.ToList(), "ag", Model.PaidByMonth.Keys.LastOrDefault(), Helpers.Sar(Model.PaidByMonth.Values.Last(), 0) + " SAR"))<div class="chartfoot">
+      <div><span class="m-small">Paid through Masar in @(Clock.Now.Year)</span><b>@(Helpers.Sar(Model.PaidThisYear, 0)) SAR</b></div>
+      <div><span class="m-small">Average service</span><b>@(Helpers.Sar(Model.AverageService, 0)) SAR</b></div>
+      <div><span class="m-small">Average consultation</span><b>@(Helpers.Sar(Model.AverageSession, 0)) SAR</b></div>
+      <div><span class="m-small">Money in escrow now</span><b>@(Helpers.Sar(Model.Escrow, 0)) SAR</b></div>
+    </div></div>
+</div>
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Requests by specialization</h3><p class="m-small">Every request on Masar</p></div></div>
+  <div class="dcb p"><div class="center">@Html.Raw(C.Donut(Model.ByField.Values.ToList().Select((n, i) => ((double)(n), C.DONUT[i % C.DONUT.Count()])).ToList(), Convert.ToString(Helpers.ArraySum(Model.ByField)), "requests"))</div><div class="don-leg">
+      @foreach (var loop in Model.ByField.Pairs().Loop())
+{
+<text>@{ var (field, count) = loop.Item; }
+        <div><em style="background:@(C.DONUT[loop.Index % C.DONUT.Count()])"></em> @(field) <b>@(count)</b></div>
+      </text>
+}
+    </div></div>
+</div>
+</div>
+<div class="d2b">
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Who is joining</h3><p class="m-small">New accounts per month, from the first payment of a client and the first document of an expert</p></div></div>
+  <div class="dcb p">@Html.Raw(C.Bars(Model.Joins.Labels, Model.Joins.Clients, Model.Joins.Experts, true))<div class="legend2" style="margin-top:14px">
+      <span><em style="background:#024940"></em> New clients</span>
+      <span><em style="background:#8BA894"></em> New experts</span></div></div>
+</div>
+
+<div class="dcard">
+  <div class="dcb p"><div class="note" style="margin:0"><i class="bi bi-exclamation-triangle"></i>
+      @(Model.Waiting) @(Helpers.Plural("expert", Model.Waiting)) @(Model.Waiting == 1 ? "is" : "are") waiting for a verification decision.
+      <a class="m-link" href="@(Routes.To("admin.verification"))">Open the queue</a> to assign the documents to yourself.</div></div>
+</div>
+</div>
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Waiting for the admin team</h3><p class="m-small">Oldest first</p></div><div class="sp"><a href="@(Routes.To("admin.activity"))" class="m-link">Activity log <i class="bi bi-arrow-right"></i></a></div></div>
+  <div class="dcb p"><div>
+      @foreach (var row in Model.Queue)
+{
+<text>
+        <div class="dli"><span class="slotic @(row.Tone)"><i class="bi @(row.Icon)"></i></span>
+          <div><b>@(row.Title)</b><p class="m-small">@(row.Note)</p></div>
+          <a href="@(row.Url)" class="m-btn @(Helpers.Truthy(row.Primary) ? "m-btn-primary" : "m-btn-outline") m-btn-sm">@(Helpers.Truthy(row.Primary) ? "Review" : "Open")</a></div>
+      </text>
+}
+    </div></div>
+</div>

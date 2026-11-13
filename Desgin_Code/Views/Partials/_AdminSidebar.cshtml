@@ -1,0 +1,43 @@
+@{
+    var me = AuthUser;
+    var waiting = Service<StatsService>().VerificationQueueCount();
+}
+<aside class="dsb">
+  <div class="dsb-brand">
+    <span class="tile"><img src="@(Routes.Asset("img/masar-mark.png"))" alt="Masar"></span>
+    <span class="nm"><span class="w">MASAR</span><span class="t">Admin panel</span></span>
+    
+    <button type="button" class="dsb-fold" data-ms-rail aria-label="Fold the menu" aria-expanded="true">
+      <i class="bi bi-chevron-double-left"></i>
+    </button>
+  </div>
+  <div class="dsb-sec">Platform</div>
+  <div class="dnav">
+    <a href="@(Routes.To("admin.overview"))" class="@Css.Classes(("on", Http.RouteIs("admin.overview")))"><span class="ic"><i class="bi bi-speedometer2"></i></span><span class="lb">Overview</span></a>
+    <a href="@(Routes.To("admin.verification"))" class="@Css.Classes(("on", Http.RouteIs("admin.verification") || Http.RouteIs("admin.application")))"><span class="ic"><i class="bi bi-patch-check"></i></span><span class="lb">Verification Queue</span>@if (Helpers.Truthy(waiting))
+{
+<text><span class="n">@(waiting)</span></text>
+}</a>
+    <a href="@(Routes.To("admin.users"))" class="@Css.Classes(("on", Http.RouteIs("admin.users")))"><span class="ic"><i class="bi bi-people"></i></span><span class="lb">Users</span></a>
+    <a href="@(Routes.To("admin.requests"))" class="@Css.Classes(("on", Http.RouteIs("admin.requests")))"><span class="ic"><i class="bi bi-inbox"></i></span><span class="lb">Requests</span></a>
+    <a href="@(Routes.To("admin.services"))" class="@Css.Classes(("on", Http.RouteIs("admin.services")))"><span class="ic"><i class="bi bi-briefcase"></i></span><span class="lb">Services</span></a>
+    <a href="@(Routes.To("admin.payments"))" class="@Css.Classes(("on", Http.RouteIs("admin.payments")))"><span class="ic"><i class="bi bi-credit-card"></i></span><span class="lb">Payments</span></a>
+    </div>
+  <div class="dsb-sec">Insights</div>
+  <div class="dnav">
+    <a href="@(Routes.To("admin.reports"))" class="@Css.Classes(("on", Http.RouteIs("admin.reports")))"><span class="ic"><i class="bi bi-bar-chart"></i></span><span class="lb">Reports</span></a>
+    <a href="@(Routes.To("admin.activity"))" class="@Css.Classes(("on", Http.RouteIs("admin.activity")))"><span class="ic"><i class="bi bi-clock-history"></i></span><span class="lb">Activity Log</span></a>
+    </div>
+  <div class="dsb-sec">System</div>
+  <div class="dnav">
+    <a href="@(Routes.To("admin.specializations"))" class="@Css.Classes(("on", Http.RouteIs("admin.specializations")))"><span class="ic"><i class="bi bi-tags"></i></span><span class="lb">Specializations</span></a>
+    <a href="@(Routes.To("admin.settings"))" class="@Css.Classes(("on", Http.RouteIs("admin.settings")))"><span class="ic"><i class="bi bi-gear"></i></span><span class="lb">Platform Settings</span></a>
+  </div>
+  <div class="dsb-foot">
+    <div class="dsb-card">
+      <div class="dsb-me">@await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = me, Box = "ava ava-sm" })<div><b>@(me.FullName)</b><span>@(me.Admin.Permission ?? "Platform admin")</span></div></div>
+      <div class="dsb-bar"><i style="width:100%"></i></div>
+      <p>@(waiting) @(Helpers.Plural("expert", waiting)) waiting <b>Review</b></p>
+    </div>
+  </div>
+</aside>

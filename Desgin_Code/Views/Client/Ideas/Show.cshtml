@@ -1,0 +1,147 @@
+@model Masar.ViewModels.Client.IdeaShowViewModel
+@{
+    Layout = "~/Views/Shared/_App.cshtml";
+    ViewData["navItem"] = "bookings";
+    ViewData["title"] = "My Business Idea Package - Masar";
+}
+@section Crumb {
+
+  <span>Home</span><i class="bi bi-chevron-right"></i><a href="@(Routes.To("ideas.index"))">Business ideas</a><i class="bi bi-chevron-right"></i><span class="cur">@(Model.Idea.Reference)</span>
+
+}
+
+<div class="wrap">
+  <div class="page-h">
+    <div><div class="d-flex align-items-center gap-3"><h1 class="m-h1">Your Business Idea Package</h1>
+      @await Html.PartialAsync("~/Views/Components/_Status.cshtml", new StatusModel { Kind = "idea", Value = Model.Idea.Status })</div>
+      <p class="m-body">@(Model.Idea.Reference)@if (Helpers.Truthy(Model.Payment))
+{
+<text> &middot; paid @(Model.Payment.PaymentDate.Format("j M Y"))</text>
+}@if (Helpers.Truthy(Model.Idea.ExpirationDate))
+{
+<text> &middot; valid until @(Model.Idea.ExpirationDate.Format("j M Y"))</text>
+}</p></div>
+    @if (Helpers.Truthy(Model.Payment) && Model.Payment.HasInvoice())
+{
+<text>
+      <a href="@(Routes.To("invoices.print", new { payment = Model.Payment.PaymentId }))" class="m-btn m-btn-outline" target="_blank" rel="noopener"><i class="bi bi-receipt"></i> Invoice</a>
+    </text>
+}
+  </div>
+  @if (new[] { "Requested", "In Study" }.Contains(Model.Idea.Status))
+{
+<text>
+    <div class="empty" style="padding:48px 36px">
+      @await Html.PartialAsync("~/Views/Svg/_EmptyProposals.cshtml")
+      <h3 class="m-h3" style="margin-top:20px">@(Model.Idea.Status == "Requested" ? "Your package is with our team" : "Our team is studying your profile")</h3>
+      <p class="m-body" style="max-width:470px;margin:10px auto 0">We match three business ideas to your budget
+        (@(Model.Client.Budget)), your interests (@(string.Join(", ", Model.Client.InterestList))) and your city.
+        You will see them here within three working days.</p>
+      <div class="d-flex gap-3" style="justify-content:center;margin-top:26px">
+        <a href="@(Routes.To("experts.index"))" class="m-btn m-btn-outline">Browse experts meanwhile</a>
+      </div>
+    </div>
+  </text>
+}
+else
+{
+<text>
+    <div class="res-h" style="margin-bottom:18px">
+      <span class="m-small"><b>@(Model.Package.Count()) @(Helpers.Plural("idea", Model.Package.Count()))</b> matched to your profile</span>
+      <span class="m-small">@(Helpers.Truthy(Model.Chosen) ? "You chose \"" + Model.Chosen.IdeaName + "\"" : "Choose one before " + Model.Idea.ExpirationDate?.Format("j M Y"))</span>
+    </div>
+    <div class="pgrid3">
+      @foreach (var loop in Model.Package.Loop())
+{
+<text>@{ var row = loop.Item; }
+        <div class="pcard">
+          <div class="pc-head" style="grid-template-columns:auto 1fr">
+            <span class="ec-pic"><span class="av av-lg">@(loop.Iteration)</span></span>
+            <div>
+              <h4 class="m-h4">@(row.IdeaName)</h4>
+              <p class="m-small">@(Model.Client.User.City) &middot; @(Model.Client.Budget) SAR budget</p>
+            </div>
+            @if (row.Status == "Chosen")
+{
+<text><span class="m-chip chip-gold"><i class="bi bi-check-circle-fill"></i> Chosen</span>
+            </text>
+}
+else if (row.Status == "Expired")
+{
+<text><span class="st cancel">Expired</span></text>
+}
+          </div>
+          <div class="pc-nums">
+            <div><span class="m-small">Start-up cost</span><b>@(Helpers.Sar(row.EstimatedCost(), 0)) SAR</b></div>
+            <div><span class="m-small">Services</span><b>@(row.Services.Count())</b></div>
+            <div><span class="m-small">Consultations</span><b>@(row.Consultations.Count())</b></div>
+          </div>
+          @if (Helpers.Truthy(row.Description))
+{
+<text><p class="m-body" style="margin-top:14px">@(row.Description)</p></text>
+}
+          @if (row.Services.Any())
+{
+<text>
+            <p class="m-label" style="margin-top:16px">What to buy</p>
+            <ul class="scope">
+              @foreach (var service in row.Services)
+{
+<text>
+                <li><i class="bi bi-check2"></i> @(service.Description) &middot; @(Helpers.Sar(service.EstimatedCost, 0)) SAR
+                  <span class="m-small">(@(service.Type?.TypeName) @(service.Type?.ServicePackge))</span></li>
+              </text>
+}
+            </ul>
+          </text>
+}
+          @if (row.Consultations.Any())
+{
+<text>
+            <p class="m-label" style="margin-top:14px">Advice you need</p>
+            <ul class="scope">
+              @foreach (var consultation in row.Consultations)
+{
+<text>
+                <li><i class="bi bi-check2"></i> @(consultation.Description) &middot; @(Helpers.Sar(consultation.EstimatedCost, 0)) SAR
+                  <span class="m-small">(@(consultation.Type?.TypeName))</span></li>
+              </text>
+}
+            </ul>
+          </text>
+}
+          <div class="pc-foot">
+            @if ((row.Status == "Delivered") && !Helpers.Truthy(Model.Chosen))
+{
+<text>
+              <form method="POST" action="@(Routes.To("ideas.choose", new { idea = row.BusinessIdeaId }))" style="flex:1"
+                  data-ms-confirm="@(row.IdeaName) becomes the idea you are working on, and the other two ideas in this package are closed."
+                  data-ms-confirm-title="Choose this idea?"
+                  data-ms-confirm-ok="Choose this one" data-ms-confirm-cancel="Let me read them again">@Html.AntiForgeryToken()
+                <button type="submit" class="m-btn m-btn-primary m-btn-block">Choose this idea</button>
+              </form>
+            </text>
+}
+else if (row.Status == "Chosen")
+{
+<text>
+              <a href="@(Routes.To("services.index"))" class="m-btn m-btn-primary m-btn-block">Start with a service</a>
+            </text>
+}
+else
+{
+<text>
+              <button type="button" class="m-btn m-btn-outline m-btn-block" disabled>Not chosen</button>
+            </text>
+}
+          </div>
+        </div>
+      </text>
+}
+    </div>
+    <p class="m-small" style="margin-top:16px"><i class="bi bi-info-circle"></i> The estimated start-up cost is the
+      services plus the consultations each idea needs. Prices on Masar always add the
+      @(Helpers.ToInt32((Config.Masar.Commission * 100)))% commission and the @(Helpers.ToInt32((Config.Masar.Vat * 100)))% VAT before you pay.</p>
+  </text>
+}
+</div>

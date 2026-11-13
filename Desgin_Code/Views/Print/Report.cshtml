@@ -1,0 +1,130 @@
+@model Masar.ViewModels.Admin.ReportsViewModel
+@{
+    Layout = "~/Views/Shared/_Print.cshtml";
+    ViewData["title"] = "Masar report " + Model.From.Format("j M Y") + " to " + Model.To.Format("j M Y");
+    ViewData["doc-label"] = Model.From.Format("j M Y") + " to " + Model.To.Format("j M Y");
+    ViewData["back"] = Routes.To("admin.reports", Http.QueryOnly("period", "from", "to"));
+}
+<div class="ms-print-head">
+  <div>
+    <h1 class="m-h1">Platform report</h1>
+    <p class="m-body">@(Model.From.Format("j F Y")) to @(Model.To.Format("j F Y"))
+      &middot; @(Model.From.DiffInDays(Model.To) + 1) days
+      &middot; @(new Dictionary<string, object?> { ["month"] = "this month", ["quarter"] = "last three months", ["year"] = "this year", ["custom"] = "custom range" }[Model.Period] ?? Model.Period)</p>
+  </div>
+  <div class="m-logo"><img src="@(Routes.Asset("img/masar-mark.png"))" alt="Masar">
+    <span><span class="w">MASAR</span><span class="t">Your Business Partner</span></span></div>
+</div>
+
+<div class="ms-rep-grid">
+  <div class="ms-rep-kpi"><span class="k">Paid through Masar</span><b>@(Helpers.NumberFormat(Model.Gross, 2))</b><span class="u">SAR gross</span></div>
+  <div class="ms-rep-kpi"><span class="k">Platform revenue</span><b>@(Helpers.NumberFormat(Model.Commission, 2))</b><span class="u">SAR commission</span></div>
+  <div class="ms-rep-kpi"><span class="k">VAT collected</span><b>@(Helpers.NumberFormat(Model.Vat, 2))</b><span class="u">SAR</span></div>
+  <div class="ms-rep-kpi"><span class="k">Paid out to experts</span><b>@(Helpers.NumberFormat(Model.Payouts, 2))</b><span class="u">SAR</span></div>
+</div>
+
+<div class="card pad" style="margin-top:20px">
+  <h3 class="m-h3">Money</h3>
+  <table class="inv-t" style="margin-top:14px">
+    <thead><tr><th>Line</th><th class="r">Amount (SAR)</th><th class="r">Share of gross</th></tr></thead>
+    @{
+    var rows = new Dictionary<string, decimal>
+    {
+        ["Gross paid by clients"] = Model.Gross,
+        ["Platform commission (" + (int)(Config.Masar.Commission * 100) + "%)"] = Model.Commission,
+        ["VAT collected (" + (int)(Config.Masar.Vat * 100) + "%)"] = Model.Vat,
+        ["Released to experts"] = Model.Payouts,
+    };
+}
+    @foreach (var (label, value) in rows.Pairs())
+{
+<text>
+      <tr><td>@(label)</td><td class="r">@(Helpers.NumberFormat(value, 2))</td>
+        <td class="r">@(Model.Gross > 0 ? Helpers.NumberFormat(value / Model.Gross * 100, 1) + "%" : "-")</td></tr>
+    </text>
+}
+  </table>
+</div>
+
+<div class="card pad" style="margin-top:20px">
+  <h3 class="m-h3">Usage</h3>
+  <table class="inv-t" style="margin-top:14px">
+    <thead><tr><th>Measure</th><th class="r">Count</th><th class="r">Completed</th></tr></thead>
+    <tr><td>Consultation sessions</td><td class="r">@(Model.SessionCount)</td><td class="r">@(Model.CompletedSessions)</td></tr>
+    <tr><td>Service requests</td><td class="r">@(Model.RequestCount)</td><td class="r">@(Model.CompletedRequests)</td></tr>
+    <tr><td>Proposals sent (all time)</td><td class="r">@(Model.Proposals)</td><td class="r">-</td></tr>
+  </table>
+  <h4 class="m-h4" style="margin:22px 0 10px">Requests by specialization</h4>
+  <table class="inv-t">
+    <thead><tr><th>Field</th><th class="r">Requests</th><th class="r">Share</th></tr></thead>
+    @{
+    var totalField = Math.Max(1, Helpers.ArraySum(Model.ByField));
+}
+    @foreach (var (label, amount) in Model.ByField)
+{
+<text>
+      <tr><td>@(label)</td><td class="r">@(amount)</td>
+        <td class="r">@(Helpers.NumberFormat(amount / (decimal)totalField * 100, 1))%</td></tr>
+    </text>
+}
+  </table>
+</div>
+
+<div class="card pad" style="margin-top:20px">
+  <h3 class="m-h3">Client satisfaction</h3>
+  <table class="inv-t" style="margin-top:14px">
+    <thead><tr><th>Measure</th><th class="r">Value</th></tr></thead>
+    <tr><td>Average rating of visible reviews</td><td class="r">@(Helpers.Truthy(Model.Satisfaction) ? Helpers.NumberFormat(Model.Satisfaction, 1) + " / 5" : "no reviews in the period")</td></tr>
+    <tr><td>Reviews written</td><td class="r">@(Model.ReviewCount)</td></tr>
+    <tr><td>Five star reviews</td><td class="r">@(Model.FiveStar)@(Helpers.Truthy(Model.ReviewCount) ? " (" + Helpers.ToInt32(Helpers.Round(Model.FiveStar / Model.ReviewCount * 100)) + "%)" : "")</td></tr>
+  </table>
+</div>
+
+<div class="card pad" style="margin-top:20px">
+  <h3 class="m-h3">Top rated experts</h3>
+  <table class="inv-t" style="margin-top:14px">
+    <thead><tr><th>Expert</th><th>Specialization</th><th class="r">Rating</th><th class="r">Reviews</th><th class="r">Completed</th><th class="r">Earned (SAR)</th></tr></thead>
+    @if (Model.TopExperts.Any())
+{
+    foreach (var row in Model.TopExperts)
+    {
+<text>
+      <tr>
+        <td><b>@(row.Expert.User?.FullName)</b></td>
+        <td>@(row.Expert.Specialization)</td>
+        <td class="r">@(Helpers.Truthy(row.Expert.Rating) ? Helpers.NumberFormat(Convert.ToDouble(row.Expert.Rating), 1) : "-")</td>
+        <td class="r">@(row.Reviews)</td>
+        <td class="r">@(row.Completed)</td>
+        <td class="r">@(Helpers.NumberFormat(row.Earned, 2))</td>
+      </tr>
+    </text>
+    }
+}
+else
+{
+<text>
+      <tr><td colspan="6">No rated expert yet.</td></tr>
+    </text>
+}
+  </table>
+</div>
+
+<div class="card pad" style="margin-top:20px">
+  <h3 class="m-h3">Revenue by month</h3>
+  <p class="m-small" style="margin-top:4px">Last eight months, whatever the period above</p>
+  <table class="inv-t" style="margin-top:14px">
+    <thead><tr><th>Month</th><th class="r">Paid through Masar (SAR)</th></tr></thead>
+    @foreach (var (label, paid) in Model.PaidByMonth)
+{
+<text>
+      <tr><td>@(label)</td><td class="r">@(Helpers.NumberFormat(paid, 2))</td></tr>
+    </text>
+}
+  </table>
+</div>
+
+<p class="ms-print-note">Produced from the Masar database on @(Clock.Now.Format("j F Y \\a\\t H:i")) by
+  @(AuthUser.FullName). Every figure is counted live at the moment of printing; there is no
+  stored report, so the same range always gives the same answer unless the underlying data changes.
+  Money is in Saudi riyals. Commission is @(Helpers.ToInt32((Config.Masar.Commission * 100)))% of the
+  expert price and VAT is @(Helpers.ToInt32((Config.Masar.Vat * 100)))% on the price.</p>

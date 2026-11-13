@@ -1,0 +1,121 @@
+@model Masar.ViewModels.Auth.DocumentsViewModel
+@{
+    Layout = "~/Views/Shared/_Auth.cshtml";
+    ViewData["title"] = "Upload your verification documents - Masar";
+}
+<div class="m-top">
+  <div class="in">
+    <a class="m-logo" href="@(Routes.To("home"))"><img src="@(Routes.Asset("img/masar-mark.png"))" alt="Masar">
+      <span><span class="w">MASAR</span><span class="t">Your Business Partner</span></span></a>
+    <div class="d-flex align-items-center gap-3">
+      <span class="m-chip"><i class="bi bi-person-badge"></i> @(AuthUser.FullName)</span>
+      <form method="POST" action="@(Routes.To("logout"))"
+            data-ms-confirm="Everything you have uploaded so far is kept. You can log in again and carry on from here."
+            data-ms-confirm-title="Save and exit?"
+            data-ms-confirm-ok="Save and log out" data-ms-confirm-cancel="Keep uploading"
+            data-ms-confirm-tone="logout">@Html.AntiForgeryToken()
+        <button type="submit" class="m-link" style="border:0;background:none;padding:0;font:inherit;cursor:pointer">Save and exit</button>
+      </form>
+    </div>
+  </div>
+</div>
+<div class="m-center">
+  <img class="m-center-img" src="@(Routes.Asset("img/auth-laptop.jpg"))" alt="">
+  <div class="m-center-veil"></div>
+  <form class="m-card m-card-pad" style="width:800px" method="POST" action="@(Routes.To("expert.documents.store"))" enctype="multipart/form-data">
+    @Html.AntiForgeryToken()
+    <div class="m-tl" style="margin-bottom:40px">
+      <div class="st on"><div class="dot"><i class="bi bi-check-lg"></i></div><p class="m-small" style="color:var(--teal);font-weight:600">Account created</p></div>
+      <div class="bar on"></div>
+      <div class="st on"><div class="dot">2</div><p class="m-small" style="color:var(--teal);font-weight:600">Upload documents</p></div>
+      <div class="bar"></div>
+      <div class="st"><div class="dot">3</div><p class="m-small">Admin review</p></div>
+    </div>
+
+    <h1 class="m-h1">Upload your verification documents</h1>
+    <p class="m-body" style="margin:10px 0 30px">An administrator checks these before your profile goes live.
+      PDF, JPG or PNG, up to 10 MB each.</p>
+
+    <div class="d-flex flex-column gap-3">
+      @foreach (var row in Model.Rows)
+{
+<text>
+        @{
+    var key = Helpers.ArraySearch(row.Type, Model.Types, true);
+    var doc = row.Doc;
+    var icon = Helpers.Truthy(doc) ? "bi-file-earmark-pdf" : (row.Type == "Portfolio of previous work" ? "bi-images" : "bi-cloud-arrow-up");
+    var hint = row.Type == "Portfolio of previous work" ? "Up to 10 images or one PDF, raises your chances of being booked" : "Drag the file here, or browse your device";
+}
+        <label class="m-up ms-drop @(Helpers.Truthy(doc) ? "done" : "") @Html.Raw((Errors.GetBag("default").Has($"documents.{key}") ? " err " : ""))">
+          <input class="ms-file" type="file" name="documents[@(key)]" accept=".pdf,.jpg,.jpeg,.png">
+          <div class="ic"><i class="bi @(icon)"></i></div>
+          <div class="meta">
+            <span class="m-req" @Html.Raw((!(Helpers.Truthy(row.Required)) ? " style=\"color:#9BAFA6\" " : ""))>@(Helpers.Truthy(row.Required) ? "Required" : "Optional")</span>
+            <div class="m-h4" style="margin:4px 0 3px">@(row.Type)</div>
+            @if (Helpers.Truthy(doc))
+{
+<text>
+              <p class="m-small">@(System.IO.Path.GetFileName(doc.FilePath)) · @(Helpers.Truthy(doc.FileExists()) ? FileService.Size(new System.IO.FileInfo(Config.WebRoot + doc.FilePath).Length) : "File not available") · uploaded @(doc.SubmittedDate.IsToday() ? "today" : doc.SubmittedDate.Format("j M Y"))</p>
+            </text>
+}
+else
+{
+<text>
+              <p class="m-small" data-ms-files="documents[@(key)]">@(hint)</p>
+            </text>
+}
+          </div>
+          @if (Helpers.Truthy(doc))
+{
+<text>
+            @if (new[] { "Uploaded", "Approved" }.Contains(doc.Status))
+{
+<text>
+              <span class="m-chip m-chip-ok"><i class="bi bi-check-circle-fill"></i> @(doc.Status)</span>
+            </text>
+}
+else
+{
+<text>
+              @await Html.PartialAsync("~/Views/Components/_Status.cshtml", new StatusModel { Kind = "document", Value = doc.Status })
+            </text>
+}
+          </text>
+}
+else
+{
+<text>
+            <span class="m-btn m-btn-outline" style="padding:11px 20px;font-size:14px">Browse</span>
+          </text>
+}
+        </label>
+        @if (Helpers.Truthy(doc) && (doc.Status != "Approved"))
+{
+<text>
+          <form method="POST" action="@(Routes.To("expert.documents.destroy", new { document = doc.DocumentId }))" style="margin-top:-52px;margin-left:auto;padding-right:26px;position:relative;z-index:2;width:max-content"
+                data-ms-confirm="The file is deleted and you have to upload your @(doc.DocumentType.ToLowerInvariant()) again before our team can verify you."
+                data-ms-confirm-title="Remove this document?"
+                data-ms-confirm-ok="Remove the document" data-ms-confirm-cancel="Keep it"
+                data-ms-confirm-tone="danger">
+            @Html.AntiForgeryToken() <input type="hidden" name="_method" value="DELETE">
+            <button type="submit" aria-label="Remove @(doc.DocumentType)" style="border:0;background:none;padding:0;cursor:pointer"><i class="bi bi-trash" style="color:#9BAFA6;font-size:17px"></i></button>
+          </form>
+        </text>
+}
+        @if (Errors.GetBag("default").Has($"documents.{key}"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle"></i> @(Errors.GetBag("default").First($"documents.{key}"))</p></text>
+}
+      </text>
+}
+    </div>
+
+    <div class="d-flex align-items-center justify-content-between" style="margin-top:36px">
+      <a class="m-link" href="@(Routes.To("home"))"><i class="bi bi-arrow-left"></i> Back</a>
+      <div class="d-flex gap-3">
+        <button type="submit" name="action" value="later" class="m-btn m-btn-outline">Save and finish later</button>
+        <button type="submit" name="action" value="submit" class="m-btn m-btn-primary">Submit for review</button>
+      </div>
+    </div>
+  </form>
+</div>

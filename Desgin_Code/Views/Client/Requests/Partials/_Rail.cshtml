@@ -1,0 +1,51 @@
+@{
+    var request = (ServiceRequest)ViewData["request"]!;
+    var files = (List<StoredFile>)ViewData["files"]!;
+    var suggested = (List<Expert>)ViewData["suggested"]!;
+}
+<div class="card pad">
+  <h4 class="m-h4">Request summary</h4>
+  <div class="pl"><span>Service type</span><span>@(request.FieldName())</span></div>
+  <div class="pl"><span>Package</span><span>@(request.Type?.ServicePackge)</span></div>
+  <div class="pl"><span>Budget</span><span>@(request.BudgetDisplay)</span></div>
+  <div class="pl" style="border:0"><span>Deadline</span><span>@(request.Deadline.Format("j M Y"))</span></div>
+  @if (Helpers.Truthy(files))
+{
+<text>
+    <div style="margin-top:16px">
+      <p class="m-label">References</p>
+      <div class="refgrid">
+        @foreach (var file in files)
+{
+<text>
+          <a class="ref" href="@(Routes.Asset(file.Path))">@if (System.Text.RegularExpressions.Regex.IsMatch(file.Name, @"\.(jpe?g|png)$", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+{
+<text><img src="@(Routes.Asset(file.Path))" alt=""></text>
+}</a>
+        </text>
+}
+      </div>
+    </div>
+  </text>
+}
+</div>
+@if (suggested.Any() && (request.Status == "Open"))
+{
+<text>
+  <div class="card pad" style="margin-top:18px" id="suggested">
+    <h4 class="m-h4">Suggested experts</h4>
+    @foreach (var expert in suggested)
+{
+<text>
+      <div class="sline">@await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = expert.User, Box = "ava ava-sm", Fallback = "av av-sm" })<div><b>@(expert.User.FullName)</b><p class="m-small">@(expert.Specialization)@if (Helpers.Truthy(expert.Rating))
+{
+<text> &middot; @(Helpers.NumberFormat(Convert.ToDouble(expert.Rating), 1))</text>
+}</p></div>
+        <form method="POST" action="@(Routes.To("requests.invite", new { serviceRequest = request.ServiceRequestId, expert = expert.ExpertId }))">@Html.AntiForgeryToken()
+          <button type="submit" class="m-link" style="border:0;background:none;padding:0;font:inherit;cursor:pointer">Invite</button>
+        </form></div>
+    </text>
+}
+  </div>
+</text>
+}

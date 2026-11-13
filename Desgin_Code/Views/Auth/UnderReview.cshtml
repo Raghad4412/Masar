@@ -1,0 +1,42 @@
+@model Masar.ViewModels.Auth.UnderReviewViewModel
+@{
+    Layout = "~/Views/Shared/_Auth.cshtml";
+    ViewData["title"] = "Your documents are with our team - Masar";
+}
+<div class="m-top">
+  <div class="in">
+    <a class="m-logo" href="@(Routes.To("home"))"><img src="@(Routes.Asset("img/masar-mark.png"))" alt="Masar">
+      <span><span class="w">MASAR</span><span class="t">Your Business Partner</span></span></a>
+    <a class="m-link" href="@(Routes.To("home"))">Back to home <i class="bi bi-arrow-right"></i></a>
+  </div>
+</div>
+<div class="m-center">
+  <img class="m-center-img" src="@(Routes.Asset("img/auth-hands.jpg"))" alt="">
+  <div class="m-center-veil"></div>
+  <div class="m-card m-card-pad" style="width:660px;text-align:center">
+    <div class="m-icon-xl" style="margin:0 auto 28px"><i class="bi bi-hourglass-split"></i></div>
+    <h1 class="m-h1">Your documents are with our team</h1>
+    <p class="m-body" style="margin-top:14px">We received @(Model.Documents.Count()) @(Helpers.Plural("document", Model.Documents.Count())) from you. An administrator reviews them
+      within <strong style="color:var(--ink)">two working days</strong>, and you will receive an email as soon
+      as your profile is approved.</p>
+
+    <div class="m-tl" style="margin-top:36px">
+      <div class="st on"><div class="dot"><i class="bi bi-check-lg"></i></div><p class="m-small" style="color:var(--teal);font-weight:600">Submitted<br>@(Model.Submitted.Format("j M Y"))</p></div>
+      <div class="bar on"></div>
+      <div class="st @(Helpers.Truthy(Model.InReview) ? "on" : "")"><div class="dot"><i class="bi bi-search"></i></div><p class="m-small" @Html.Raw((Helpers.Truthy(Model.InReview) ? " style=\"color:var(--teal);font-weight:600\" " : ""))>Under review<br>@(Helpers.Truthy(Model.InReview) ? "in progress" : "waiting")</p></div>
+      <div class="bar"></div>
+      <div class="st"><div class="dot"><i class="bi bi-patch-check"></i></div><p class="m-small">Verified<br>expected @(Model.Expected.Format("j M"))</p></div>
+    </div>
+
+    <div style="background:var(--mint-50);border:1px solid var(--line);border-radius:var(--r);padding:22px;margin-top:34px;text-align:left">
+      <div class="m-h4" style="margin-bottom:10px">While you wait</div>
+      <p class="m-small">You can already complete your profile, set your available time slots and your session
+        price. You will be able to receive bookings the moment your documents are approved.</p>
+    </div>
+
+    <div class="d-flex gap-3" style="margin-top:30px;justify-content:center">
+      <a href="@(Routes.To("home"))" class="m-btn m-btn-outline">Back to home</a>
+      <a href="@(Routes.To("expert.profile"))" class="m-btn m-btn-primary">Complete my profile</a>
+    </div>
+  </div>
+</div>

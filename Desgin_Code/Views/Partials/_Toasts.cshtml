@@ -1,0 +1,43 @@
+@{
+    var seeds = new List<(string Tone, string Text)>();
+
+    if (!string.IsNullOrEmpty(Session("banner")))
+    {
+        seeds.Add((Session("banner_tone", "success")!, Session("banner")!));
+    }
+    if (!string.IsNullOrEmpty(Session("saved")))
+    {
+        seeds.Add(("success", Session("saved")!));
+    }
+    if (!string.IsNullOrEmpty(Session("error")))
+    {
+        seeds.Add(("error", Session("error")!));
+    }
+    if (!string.IsNullOrEmpty(Session("warning")))
+    {
+        seeds.Add(("warn", Session("warning")!));
+    }
+
+    var errorCount = Errors.GetBags().Sum(bag => bag.All().Count);
+    var alreadyTold = seeds.Any(s => s.Tone == "error" || s.Tone == "warn");
+    if (errorCount > 0 && !alreadyTold)
+    {
+        var first = Errors.GetBags().SelectMany(bag => bag.All()).FirstOrDefault();
+
+        seeds.Add(("error", errorCount == 1 ? first! : errorCount + " fields need your attention. " + first));
+    }
+}
+
+@if (Helpers.Truthy(seeds))
+{
+<text>
+  <div class="ms-toast-seeds" hidden>
+    @foreach (var seed in seeds)
+{
+<text>
+      <span data-ms-toast="@(seed.Tone)">@(seed.Text)</span>
+    </text>
+}
+  </div>
+</text>
+}

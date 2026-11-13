@@ -1,0 +1,197 @@
+@model Masar.ViewModels.Client.ServiceWorkspaceViewModel
+@{
+    Layout = "~/Views/Shared/_App.cshtml";
+    ViewData["navItem"] = "requests";
+    ViewData["title"] = Model.Request.Title + " - Masar";
+}
+@section Crumb {
+
+  <span>Home</span><i class="bi bi-chevron-right"></i><a href="@(Routes.To("requests.index"))">My Requests</a><i class="bi bi-chevron-right"></i><span class="cur">@(Model.Request.Reference)</span>
+
+}
+
+<div class="wrap">
+  <div class="page-h">
+    <div><div class="d-flex align-items-center gap-3"><h1 class="m-h1">@(Model.Request.Title)</h1>@await Html.PartialAsync("~/Views/Components/_Status.cshtml", new StatusModel { Kind = "request", Value = Model.Request.Status })</div>
+      <p class="m-body">@(Model.Request.Reference) &middot; from request @(Model.Request.RequestReference) &middot; due @(Model.Request.Deadline.Format("j M Y"))</p></div>
+    @if (Helpers.Truthy(Model.Payment) && Model.Payment.HasInvoice())
+{
+<text>
+      <a href="@(Routes.To("invoices.print", new { payment = Model.Payment.PaymentId }))" class="m-btn m-btn-outline" target="_blank" rel="noopener"><i class="bi bi-receipt"></i> Invoice</a>
+    </text>
+}
+  </div>
+  <div class="bcols">
+    <section>
+      <div class="card pad">
+        <h3 class="m-h3">Service @(Model.Request.Status == "Completed" ? "completed" : "in progress")</h3>
+        <div class="conf-grid" style="margin-top:14px">
+          <div><span class="m-small">Expert</span><b>@(Model.User?.FullName)</b></div>
+          <div><span class="m-small">Agreed price</span><b>@(Helpers.NumberFormat(Convert.ToDouble(Model.Request.AgreedPrice), 2)) SAR</b></div>
+          <div><span class="m-small">Delivery</span><b>@(Model.Proposal?.DeliveryTime) days &middot; by @(Model.Request.DeliveryDate?.Format("j M Y"))</b></div>
+          <div><span class="m-small">Package</span><b>@(Model.Request.FieldName()) &middot; @(Model.Request.Type?.ServicePackge)</b></div>
+        </div>
+        <div class="prog">
+          <div class="pbar"><span style="width:@(Model.Progress)%"></span></div>
+          <span class="m-small">@(Model.Request.Status == "Completed" ? "Completed on " + Model.Request.DeliveryDate?.Format("j M Y") : "Step " + Model.DoneSteps + " of " + Model.Timeline.Count() + " · final files by " + Model.Request.DeliveryDate?.Format("j M Y"))</span>
+        </div>
+      </div>
+      <div class="card pad" style="margin-top:22px">
+        <div class="d-flex align-items-center justify-content-between">
+          <h3 class="m-h3">Delivered files</h3>
+          @if (Helpers.Truthy(Model.Delivered))
+{
+<text>
+            <span class="m-chip chip-ok"><i class="bi bi-check-circle-fill"></i> @(Model.Request.Status == "Completed" ? "All files delivered" : Model.Delivered.Count() + " " + Helpers.Plural("file", Model.Delivered.Count()) + " delivered")</span>
+          </text>
+}
+else
+{
+<text>
+            <span class="m-chip">Waiting for the expert</span>
+          </text>
+}
+        </div>
+        @{
+    var images = Model.Delivered.Where(f => System.Text.RegularExpressions.Regex.IsMatch(f.Name, @"\.(jpe?g|png)$", System.Text.RegularExpressions.RegexOptions.IgnoreCase)).ToList();
+}
+        @if (Helpers.Truthy(images))
+{
+<text>
+          <div class="pgrid" style="margin-top:16px">
+            @foreach (var file in images)
+{
+<text>
+              <figure class="pitem"><img src="@(Routes.Asset(file.Path))" alt=""><figcaption>@(file.Name)</figcaption></figure>
+            </text>
+}
+          </div>
+        </text>
+}
+        @if (Helpers.Truthy(Model.Delivered))
+{
+<text>
+          <div class="files" style="margin-top:16px">
+            @foreach (var file in Model.Delivered)
+{
+<text>
+              <a class="file" href="@(Routes.Asset(file.Path))"><i class="bi bi-file-earmark-text"></i> @(file.Name) <span class="m-small">@(FileService.Size(file.Size))</span></a>
+            </text>
+}
+          </div>
+        </text>
+}
+else
+{
+<text>
+          <p class="m-body" style="margin-top:14px">@(Model.User?.FirstName) has not uploaded any files yet. You will see them here.</p>
+        </text>
+}
+      </div>
+      <div class="card pad" style="margin-top:22px">
+        <h3 class="m-h3">Messages</h3>
+        <div class="chat">
+          @if (Model.Messages.Any())
+{
+    foreach (var message in Model.Messages)
+    {
+<text>
+            @{
+    var mine = message.SenderUserId == AuthUser?.UserId;
+}
+            <div class="msg @(Helpers.Truthy(mine) ? "me" : "them")">@if (!(Helpers.Truthy(mine)))
+{
+<text>@await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = message.Sender, Box = "ava ava-sm", Fallback = "av av-sm" })</text>
+}
+              <div><p>@(message.MessageText)</p>
+              <span class="t">@(Helpers.Truthy(mine) ? "You" : message.Sender.FirstName) &middot; @(message.SentDate.Format("j M, H:i"))</span></div></div>
+          </text>
+    }
+}
+else
+{
+<text>
+            <p class="m-small">No messages yet. Write the first one below.</p>
+          </text>
+}
+        </div>
+        <form class="chatbar" method="POST" action="@(Routes.To("services.message", new { serviceRequest = Model.Request.ServiceRequestId }))">
+          @Html.AntiForgeryToken()
+          <div class="m-input @Html.Raw((Errors.GetBag("default").Has("Message_Text") ? " err " : ""))">
+            <input name="Message_Text" type="text" required maxlength="2000" placeholder="Write a message…">
+          </div>
+          <button type="submit" class="m-btn m-btn-primary"><i class="bi bi-send"></i></button>
+        </form>
+        @if (Errors.GetBag("default").Has("Message_Text"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle-fill"></i> @(Errors.GetBag("default").First("Message_Text"))</p></text>
+}
+      </div>
+    </section>
+    <aside>
+      @if (Helpers.Truthy(Model.User))
+{
+<text>
+        <div class="mini-ex">@await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = Model.User, Box = "ava ", Fallback = "av" })
+          <div><div class="m-h4">@(Model.User.FullName)</div><p class="m-small">@(Model.Expert.Specialization) &middot; @(Model.User.City)</p></div>
+          <span class="m-chip chip-ok"><i class="bi bi-patch-check-fill"></i> Verified</span></div>
+      </text>
+}
+      <div class="card pad" style="margin-top:18px">
+        <h4 class="m-h4">Progress</h4>
+        <div class="vtl">
+          @foreach (var (i, step) in Model.Timeline.Pairs())
+{
+<text>
+            @{
+    var cls = Helpers.Truthy(step.Done) ? "done" : (((i > 0) && Helpers.Truthy(Model.Timeline[i - 1].Done)) ? "live" : "");
+}
+            <div class="vt @(cls)"><span class="d">@if (Helpers.Truthy(step.Done))
+{
+<text><i class="bi bi-check-lg"></i></text>
+}
+else if (cls == "live")
+{
+<text><i class="bi bi-three-dots"></i></text>
+}</span>
+              <div><b>@(step.Label)@if ((step.Label == "Paid") && Helpers.Truthy(Model.Payment))
+{
+<text> &middot; @(Helpers.NumberFormat(Convert.ToDouble(Model.Payment.Amount), 2)) SAR </text>
+}</b>
+                <p class="m-small">@(Helpers.Truthy(step.At) ? step.At.Format("j M") : (cls == "live" ? "expected " + Model.Request.DeliveryDate?.Format("j M") : "waiting for you"))</p></div></div>
+          </text>
+}
+        </div>
+        @if (Model.Request.Status == "In Progress")
+{
+<text>
+          <form method="POST" action="@(Routes.To("services.complete", new { serviceRequest = Model.Request.ServiceRequestId }))"
+                data-ms-confirm="Masar releases the expert payout from the money it holds and you can leave a review. Do this only after you have the final files."
+                data-ms-confirm-title="Mark this service as completed?"
+                data-ms-confirm-ok="Yes, release the payment" data-ms-confirm-cancel="Not yet">@Html.AntiForgeryToken()
+            <button type="submit" class="m-btn m-btn-primary m-btn-block" style="margin-top:14px">Mark as completed</button>
+          </form>
+          <p class="m-small" style="text-align:center;margin-top:10px">Only after you receive the final files.</p>
+        </text>
+}
+else
+{
+<text>
+          @if (Helpers.Truthy(Model.Payment) && Model.Payment.HasInvoice())
+{
+<text>
+            <a href="@(Routes.To("invoices.print", new { payment = Model.Payment.PaymentId }))" class="m-btn m-btn-outline m-btn-block" style="margin-top:14px" target="_blank" rel="noopener"><i class="bi bi-receipt"></i> View invoice</a>
+          </text>
+}
+          @if (!(Helpers.Truthy(Model.Review)))
+{
+<text>
+            <a href="@(Routes.To("services.review", new { serviceRequest = Model.Request.ServiceRequestId }))" class="m-btn m-btn-primary m-btn-block" style="margin-top:10px"><i class="bi bi-star"></i> Rate @(Model.User?.FirstName)</a>
+          </text>
+}
+        </text>
+}
+      </div>
+    </aside>
+  </div>
+</div>

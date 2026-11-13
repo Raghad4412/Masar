@@ -1,0 +1,115 @@
+@model Masar.ViewModels.Client.ProposalPayViewModel
+@{
+    Layout = "~/Views/Shared/_App.cshtml";
+    ViewData["navItem"] = "requests";
+    ViewData["title"] = "Pay for the service - Masar";
+}
+@section Crumb {
+
+  <span>Home</span><i class="bi bi-chevron-right"></i><a href="@(Routes.To("requests.index"))">My Requests</a><i class="bi bi-chevron-right"></i><a href="@(Routes.To("requests.show", new { serviceRequest = Model.Request.ServiceRequestId }))">@(Model.Request.RequestReference)</a><i class="bi bi-chevron-right"></i><span class="cur">Payment</span>
+
+}
+
+<form method="POST" action="@(Routes.To("proposals.pay.store", new { proposal = Model.Proposal.ProposalId }))">
+  @Html.AntiForgeryToken()
+  <div class="wrap">
+    <div class="bcols">
+      <section>
+        <div class="card pad">
+          <h2 class="m-h2" style="font-size:26px">Pay for the service</h2>
+          <p class="m-body" style="margin:8px 0 20px">@(Model.Request.FieldName()) by @(Model.User.FullName) &middot; delivery in @(Model.Proposal.DeliveryTime) days.</p>
+          @if (Helpers.Truthy(Model.Card))
+{
+<text>
+            <input type="hidden" name="Payment_Method" value="Credit card">
+            <div class="m-fg">
+              <label class="m-label" for="card_number">Card number</label>
+              <div class="m-input @Html.Raw((Errors.GetBag("default").Has("card_number") ? " err " : ""))">
+                <input id="card_number" name="card_number" type="text" inputmode="numeric" required maxlength="19"
+                       autocomplete="cc-number" data-ms-card placeholder="0000 0000 0000 0000">
+                <i class="bi bi-credit-card-2-front" style="color:var(--teal)"></i>
+              </div>
+              @if (Errors.GetBag("default").Has("card_number"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle-fill"></i> @(Errors.GetBag("default").First("card_number"))</p></text>
+}
+            </div>
+            <div class="m-two">
+              <div class="m-fg"><label class="m-label" for="card_expiry">Expiry date</label>
+                <div class="m-input @Html.Raw((Errors.GetBag("default").Has("card_expiry") ? " err " : ""))">
+                  <input id="card_expiry" name="card_expiry" type="text" inputmode="numeric" required maxlength="7"
+                         autocomplete="cc-exp" data-ms-expiry placeholder="MM / YY">
+                </div>
+                @if (Errors.GetBag("default").Has("card_expiry"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle-fill"></i> @(Errors.GetBag("default").First("card_expiry"))</p></text>
+}
+              </div>
+              <div class="m-fg"><label class="m-label" for="card_cvc">Security code</label>
+                <div class="m-input @Html.Raw((Errors.GetBag("default").Has("card_cvc") ? " err " : ""))">
+                  <input id="card_cvc" name="card_cvc" type="password" inputmode="numeric" required pattern="\d{3,4}"
+                         maxlength="4" autocomplete="cc-csc" placeholder="&bull;&bull;&bull;">
+                </div>
+                @if (Errors.GetBag("default").Has("card_cvc"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle-fill"></i> @(Errors.GetBag("default").First("card_cvc"))</p></text>
+}
+              </div>
+            </div>
+            <div class="m-fg"><label class="m-label" for="card_name">Name on the card</label>
+              <div class="m-input @Html.Raw((Errors.GetBag("default").Has("card_name") ? " err " : ""))">
+                <input id="card_name" name="card_name" type="text" required maxlength="60" autocomplete="cc-name"
+                       placeholder="@(AuthUser.FullName.ToUpperInvariant())">
+              </div>
+              @if (Errors.GetBag("default").Has("card_name"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle-fill"></i> @(Errors.GetBag("default").First("card_name"))</p></text>
+}
+            </div>
+          </text>
+}
+else
+{
+<text>
+            <div class="pays">
+              <label class="pay @(Old("Payment_Method", "mada") == "mada" ? "on" : "") @Html.Raw((Errors.GetBag("default").Has("Payment_Method") ? " err " : ""))">
+                <input class="ms-input" type="radio" name="Payment_Method" value="mada" required @(Old("Payment_Method", "mada") == "mada" ? "checked" : "")>
+                <span class="radio"><i class="bi bi-check-lg"></i></span>
+                <span class="pname"><i class="bi bi-credit-card-2-front"></i> mada</span>
+                <span class="m-small">Saudi debit card &middot; no extra fee</span></label>
+              <label class="pay @(Old("Payment_Method") == "Apple Pay" ? "on" : "")">
+                <input class="ms-input" type="radio" name="Payment_Method" value="Apple Pay" required @(Old("Payment_Method") == "Apple Pay" ? "checked" : "")>
+                <span class="radio"><i class="bi bi-check-lg"></i></span>
+                <span class="pname"><i class="bi bi-apple"></i> Apple Pay</span>
+                <span class="m-small">Pay with Face ID or Touch ID</span></label>
+              <label class="pay @(Old("Payment_Method") == "Credit card" ? "on" : "")">
+                <input class="ms-input" type="radio" name="Payment_Method" value="Credit card" required @(Old("Payment_Method") == "Credit card" ? "checked" : "")
+                       onchange="window.location='@(Routes.To("proposals.pay", new { proposal = Model.Proposal.ProposalId, method = "Credit card" }))'">
+                <span class="radio"><i class="bi bi-check-lg"></i></span>
+                <span class="pname"><i class="bi bi-credit-card"></i> New credit card</span>
+                <span class="m-small">Visa or Mastercard</span></label>
+            </div>
+            @if (Errors.GetBag("default").Has("Payment_Method"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle-fill"></i> @(Errors.GetBag("default").First("Payment_Method"))</p></text>
+}
+          </text>
+}
+          <div class="milestone-pay">
+            <div class="m-h4">How the money is released</div>
+            <div class="relrow"><span class="rdot on"></span><div><b>Now &middot; @(Helpers.NumberFormat(Model.Total, 2)) SAR</b><p class="m-small">Held safely by Masar.</p></div></div>
+            <div class="relrow"><span class="rdot"></span><div><b>On delivery &middot; @(Helpers.NumberFormat(Model.Payout, 2)) SAR to @(Model.User.FirstName)</b><p class="m-small">Released when you mark the service completed, after the @(Helpers.ToInt32((Config.Masar.Commission * 100)))% commission.</p></div></div>
+          </div>
+        </div>
+      </section>
+      <aside>
+        <div class="card pad">
+          <h4 class="m-h4">Order summary</h4>
+          @await Html.PartialAsync("~/Views/Partials/_PriceSummary.cshtml", null, new ViewDataDictionary(ViewData) { ["line"] = Model.Request.FieldName() + " · " + Model.Request.Type?.ServicePackge, ["price"] = Model.Price, ["commission"] = Model.Commission, ["vat"] = Model.Vat, ["total"] = Model.Total })
+          <button type="submit" class="m-btn m-btn-primary m-btn-block" style="margin-top:20px">Pay @(Helpers.NumberFormat(Model.Total, 2)) SAR</button>
+          <p class="m-small" style="text-align:center;margin-top:12px">Protected by 3-D Secure</p>
+        </div>
+      </aside>
+    </div>
+  </div>
+</form>

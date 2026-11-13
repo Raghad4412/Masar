@@ -1,0 +1,39 @@
+@model Masar.ViewModels.Client.ProposalAcceptViewModel
+@{
+    Layout = "~/Views/Shared/_App.cshtml";
+    ViewData["navItem"] = "requests";
+    ViewData["pageClass"] = "center-page";
+    ViewData["title"] = "Accept this proposal? - Masar";
+}
+@section Crumb {
+
+  <span>Home</span><i class="bi bi-chevron-right"></i><a href="@(Routes.To("requests.index"))">My Requests</a><i class="bi bi-chevron-right"></i><a href="@(Routes.To("requests.show", new { serviceRequest = Model.Request.ServiceRequestId }))">@(Model.Request.RequestReference)</a><i class="bi bi-chevron-right"></i><span class="cur">Proposal</span>
+
+}
+
+<div class="modal-wrap">
+  <div class="card pad" style="width:620px">
+    <div class="d-flex align-items-center justify-content-between" style="margin-bottom:18px">
+      <h2 class="m-h2" style="font-size:24px">Accept this proposal?</h2>
+      <a href="@(Routes.To("proposals.show", new { proposal = Model.Proposal.ProposalId }))" aria-label="Close"><i class="bi bi-x-lg" style="color:#9BAFA6"></i></a>
+    </div>
+    <div class="revbox">
+      @await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = Model.User, Box = "ava ava-lg", Fallback = "av av-lg" })
+      <div><div class="m-h4">@(Model.User.FullName)</div><p class="m-small">@(Model.Expert.Specialization) &middot; @(Helpers.Sar(Model.Proposal.ProposalPrice, 0)) SAR &middot; @(Model.Proposal.DeliveryTime) days</p></div>
+      <span class="m-chip chip-ok">Verified</span>
+    </div>
+    <p class="m-body">When you accept, the request closes, the other @(Model.Others) @(Helpers.Plural("proposal", Model.Others)) @(Model.Others == 1 ? "is" : "are") rejected
+      automatically, and the service starts after your payment.</p>
+    <div class="pl" style="margin-top:18px"><span>Agreed price</span><span>@(Helpers.NumberFormat(Model.Price, 2))</span></div>
+    <div class="pl"><span>Platform commission (@(Helpers.ToInt32((Config.Masar.Commission * 100)))%)</span><span>@(Helpers.NumberFormat(Model.Commission, 2))</span></div>
+    <div class="pl"><span>VAT (@(Helpers.ToInt32((Config.Masar.Vat * 100)))%)</span><span>@(Helpers.NumberFormat(Model.Vat, 2))</span></div>
+    <div class="pt"><span>Total to pay</span><span class="tot">@(Helpers.NumberFormat(Model.Total, 2)) SAR</span></div>
+    <div class="secure-row" style="margin-top:20px"><i class="bi bi-shield-lock-fill"></i>
+      <p class="m-small">The amount is held by Masar and released to @(Model.User.FirstName) only after you confirm the work
+        is completed.</p></div>
+    <div class="d-flex gap-3 justify-content-end" style="margin-top:24px">
+      <a href="@(Routes.To("proposals.show", new { proposal = Model.Proposal.ProposalId }))" class="m-btn m-btn-outline">Not yet</a>
+      <a href="@(Routes.To("proposals.pay", new { proposal = Model.Proposal.ProposalId }))" class="m-btn m-btn-primary">Accept and pay</a>
+    </div>
+  </div>
+</div>

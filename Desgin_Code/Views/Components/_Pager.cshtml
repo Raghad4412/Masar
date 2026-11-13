@@ -1,0 +1,71 @@
+@model PagerModel
+@{
+    var pager = Model.Pager;
+    var unit = Model.Unit;
+}
+@if (pager.Total > 0)
+{
+<text>
+  <nav class="ms-pager" aria-label="Pages">
+    <span class="note">Showing @(Helpers.NumberFormat(pager.From)) to @(Helpers.NumberFormat(pager.To))
+      of @(Helpers.NumberFormat(pager.Total)) @(Helpers.Plural(unit, pager.Total))</span>
+
+    @if (pager.HasPages())
+{
+<text>
+      <span class="pages">
+        @if (pager.Page > 1)
+{
+<text>
+          <a href="@(pager.Url(pager.Page - 1))" rel="prev" aria-label="Previous page"><i class="bi bi-chevron-left"></i></a>
+        </text>
+}
+else
+{
+<text>
+          <span class="pg off"><i class="bi bi-chevron-left"></i></span>
+        </text>
+}
+
+        @foreach (var n in pager.Window())
+{
+<text>
+          @if (n == 0)
+{
+<text>
+            <span class="pg gap">&hellip;</span>
+          </text>
+}
+else if (n == pager.Page)
+{
+<text>
+            <span class="pg on" aria-current="page">@(n)</span>
+          </text>
+}
+else
+{
+<text>
+            <a href="@(pager.Url(n))">@(n)</a>
+          </text>
+}
+        </text>
+}
+
+        @if (pager.Page < pager.Pages)
+{
+<text>
+          <a href="@(pager.Url(pager.Page + 1))" rel="next" aria-label="Next page"><i class="bi bi-chevron-right"></i></a>
+        </text>
+}
+else
+{
+<text>
+          <span class="pg off"><i class="bi bi-chevron-right"></i></span>
+        </text>
+}
+      </span>
+    </text>
+}
+  </nav>
+</text>
+}

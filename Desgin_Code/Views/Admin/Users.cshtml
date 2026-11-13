@@ -1,0 +1,113 @@
+@model Masar.ViewModels.Admin.AdminUsersViewModel
+@{
+    Layout = "~/Views/Shared/_Dash.cshtml";
+    ViewData["panel"] = "admin";
+    ViewData["dmeCaption"] = Model.DmeCaption;
+    ViewData["title"] = "Users - Masar";
+    ViewData["dtitle"] = "Users";
+    ViewData["dcrumb"] = "Users";
+}
+@{
+    var countMap = new Dictionary<string, int>
+    {
+        ["all"] = Model.Counts.All,
+        ["Client"] = Model.Counts.Client,
+        ["Expert"] = Model.Counts.Expert,
+        ["Admin"] = Model.Counts.Admin,
+        ["Blocked"] = Model.Counts.Blocked,
+    };
+    var tabs = new List<TabLink>();
+    foreach (var (key, label) in new Dictionary<string, string> { ["all"] = "All", ["Client"] = "Clients", ["Expert"] = "Experts", ["Admin"] = "Admins" })
+    {
+        tabs.Add(new TabLink
+        {
+            Label = label,
+            Count = countMap[key],
+            Url = key == "all" ? Routes.To("admin.users") : Routes.To("admin.users", new { role = key }),
+            On = key == "all" ? string.IsNullOrEmpty(Model.Role) : Model.Role == key,
+        });
+    }
+    tabs.Add(new TabLink
+    {
+        Label = "Blocked",
+        Count = countMap["Blocked"],
+        Url = Routes.To("admin.users", new { status = "Blocked" }),
+        On = Model.Status == "Blocked",
+    });
+}
+@{ Func<object?, IHtmlContent> slot1 = @<text>
+  
+  @if (Model.Users.Any())
+{
+    foreach (var user in Model.Users)
+    {
+<text>
+    <tr>
+      <td><div class="who">@await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = user, Box = "ava ava-sm", Fallback = "av av-sm" })
+        <span><b>@(user.FullName)</b><span class="m-small">@(user.Email)</span></span></div></td>
+      <td class="nw">@(user.Role)@if (Helpers.Truthy(user.Expert))
+{
+<text><br><span class="m-small">@(user.Expert.Specialization)</span></text>
+}
+else if (Helpers.Truthy(user.Admin))
+{
+<text><br><span class="m-small">@(user.Admin.Permission)</span></text>
+}</td>
+      <td class="nw">@(user.City)</td>
+      <td class="nw"><span class="m-small">@(user.PhoneDisplay)</span></td>
+      <td>@await Html.PartialAsync("~/Views/Components/_Status.cshtml", new StatusModel { Kind = "user", Value = user.Status })</td>
+      <td class="r">
+        @if (user.Status == "Blocked")
+{
+<text>
+          <form method="POST" action="@(Routes.To("admin.users.unblock", new { user = user.UserId }))" style="display:inline"
+                data-ms-confirm="@(user.FullName) can log in again and carry on where the account stopped."
+                data-ms-confirm-title="Unblock this account?"
+                data-ms-confirm-ok="Unblock the account" data-ms-confirm-cancel="Keep it blocked">@Html.AntiForgeryToken()
+            <button type="submit" class="m-link" style="border:0;background:none;padding:0;font:inherit;cursor:pointer">Unblock</button>
+          </form>
+        </text>
+}
+else if (!user.IsAdmin())
+{
+<text>
+          <form method="POST" action="@(Routes.To("admin.users.block", new { user = user.UserId }))" style="display:inline"
+                data-ms-confirm="@(user.FullName) is signed out at once and cannot log in again until an admin unblocks the account. Open bookings and proposals stay as they are."
+                data-ms-confirm-title="Block this account?"
+                data-ms-confirm-ok="Block the account" data-ms-confirm-cancel="Leave it active"
+                data-ms-confirm-tone="danger">@Html.AntiForgeryToken()
+            <button type="submit" class="m-link" style="border:0;background:none;padding:0;font:inherit;cursor:pointer"
+                    @Html.Raw((((Model.OpenWork.ContainsKey(user.UserId) ? Model.OpenWork[user.UserId] : 0)) > 0 ? " title=\"" + E(Model.OpenWork[user.UserId]) + " open bookings or proposals\" " : ""))>Block</button>
+          </form>
+        </text>
+}
+else
+{
+<text>
+          <span class="m-small">-</span>
+        </text>
+}
+      </td>
+    </tr>
+  </text>
+    }
+}
+else
+{
+<text>
+    <tr><td colspan="6"><p class="m-body" style="padding:18px 0">No user matches this filter.</p></td></tr>
+  </text>
+}
+</text>; }
+@{ Func<object?, IHtmlContent> filter1 = @<text>
+    <form class="m-input sm" style="width:220px" method="GET" action="@(Routes.To("admin.users"))">
+      @if (Helpers.Truthy(Model.Role))
+{
+<text><input type="hidden" name="role" value="@(Model.Role)"></text>
+}
+      <input type="search" name="q" value="@(Http.Query("q"))" maxlength="80" placeholder="Search name, email or phone"
+             style="flex:1;min-width:0;border:0;outline:0;background:transparent;font:inherit;color:inherit;padding:0">
+      <button type="submit" aria-label="Search" style="border:0;background:none;padding:0;cursor:pointer;color:inherit"><i class="bi bi-search"></i></button>
+    </form>
+  </text>; }
+@await Html.PartialAsync("~/Views/Components/_AdminTable.cshtml", new AdminTableModel { Pager = Model.Pager, Unit = "account", Title = "Everyone on Masar", Note = "Clients, experts and admins in one list", Tabs = tabs, Head = new List<HeadCell> { new HeadCell { Label = "User" }, new HeadCell { Label = "Role" }, new HeadCell { Label = "City" }, new HeadCell { Label = "Phone" }, new HeadCell { Label = "Status" }, new HeadCell { Label = "", Right = true } }, Slot = slot1(null), Filter = filter1(null) })

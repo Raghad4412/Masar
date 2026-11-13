@@ -1,0 +1,187 @@
+@model Masar.ViewModels.Admin.AdminVerificationViewModel
+@{
+    Layout = "~/Views/Shared/_Dash.cshtml";
+    ViewData["panel"] = "admin";
+    ViewData["dmeCaption"] = Model.DmeCaption;
+    ViewData["title"] = "Verification Queue - Masar";
+    ViewData["dtitle"] = "Verification Queue";
+    ViewData["dcrumb"] = "Verification Queue";
+}
+@{
+    var queue = Math.Max(1, Model.Counts.All);
+    var docs = Math.Max(1, Model.Decisions.Uploaded + Model.Decisions.InReview + Model.Decisions.Approved + Model.Decisions.Rejected);
+    Func<dynamic, dynamic, dynamic> pct = (n, of) => Helpers.Round(n / Math.Max(1, of) * 100, 1);
+}
+<div class="kpis">
+  <div class="kpi">
+    <div class="kpi-t"><span class="kpi-ic gold"><i class="bi bi-hourglass-split"></i></span>
+      <span class="kpi-l">Waiting for review</span></div>
+    <div class="kpi-v">@(Model.Counts.Waiting)</div>
+    <div class="ms-kpi-ring">@Html.Raw(C.MiniRing(pct(Model.Counts.Waiting, queue), C.AMBER))
+      <span class="m-small">of the queue is still unopened</span></div>
+    <p class="m-small" style="margin-top:10px">@(Model.Decisions.Uploaded) uploaded @(Helpers.Plural("document", Model.Decisions.Uploaded)) not yet opened</p>
+  </div>
+  <div class="kpi">
+    <div class="kpi-t"><span class="kpi-ic blue"><i class="bi bi-search"></i></span>
+      <span class="kpi-l">In review now</span></div>
+    <div class="kpi-v">@(Model.Counts.Review)</div>
+    <div class="ms-kpi-ring">@Html.Raw(C.MiniRing(pct(Model.Counts.Review, queue), C.INFO))
+      <span class="m-small">of the queue is with an admin</span></div>
+    <p class="m-small" style="margin-top:10px">@(Model.Decisions.InReview) @(Helpers.Plural("document", Model.Decisions.InReview)) assigned to an admin</p>
+  </div>
+  <div class="kpi">
+    <div class="kpi-t"><span class="kpi-ic green"><i class="bi bi-patch-check"></i></span>
+      <span class="kpi-l">Approved this month</span></div>
+    <div class="kpi-v">@(Model.ApprovedThisMonth)</div>
+    <div class="ms-kpi-ring">@Html.Raw(C.MiniRing(pct(Model.Decisions.Approved, docs), C.SAGE))
+      <span class="m-small">of every decision has been an approval</span></div>
+    <p class="m-small" style="margin-top:10px">@(Model.Decisions.Approved) approved documents in total</p>
+  </div>
+  <div class="kpi">
+    <div class="kpi-t"><span class="kpi-ic "><i class="bi bi-x-octagon"></i></span>
+      <span class="kpi-l">Rejected</span></div>
+    <div class="kpi-v">@(Model.Decisions.Rejected)</div>
+    <div class="ms-kpi-ring">@Html.Raw(C.MiniRing(pct(Model.Decisions.Rejected, docs), C.TEAL))
+      <span class="m-small">of every decision has been a rejection</span></div>
+    <p class="m-small" style="margin-top:10px">@(Model.Counts.Needs) @(Helpers.Plural("application", Model.Counts.Needs)) need new documents</p>
+  </div>
+</div>
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Expert verification queue</h3><p class="m-small">Every application waiting for a decision</p></div></div>
+  <div class="dcb t"><div class="tabsline">
+    @foreach (var (key, label) in new Dictionary<string, object?> { ["all"] = "All", ["waiting"] = "Waiting", ["review"] = "In review", ["needs"] = "Needs documents" }.Pairs())
+{
+<text>
+      <a href="@(key == "all" ? Routes.To("admin.verification") : Routes.To("admin.verification", new { tab = key }))" class="@(Model.Tab == key ? "on" : "")">@(label) (@(Model.Counts[key]))</a>
+    </text>
+}
+    <span class="grow"></span>
+    <form class="m-input sm" style="width:190px" method="GET" action="@(Routes.To("admin.verification"))">
+      @if (Model.Tab != "all")
+{
+<text><input type="hidden" name="tab" value="@(Model.Tab)"></text>
+}
+      <select name="spec" onchange="this.form.submit()" style="flex:1;min-width:0;border:0;outline:0;background:transparent;font:inherit;color:inherit;padding:0;appearance:none;cursor:pointer">
+        <option value="">All specializations</option>
+        @foreach (var s in Config.Masar.Specializations)
+{
+<text><option value="@(s)" @(Model.Spec == s ? "selected" : "")>@(s)</option></text>
+}
+      </select>
+      <i class="bi bi-chevron-down"></i>
+    </form></div>
+  <div class="md-table-scroll"><table class="dt2">
+    <tr><th>Expert</th><th>Specialization</th><th>Documents</th><th>Submitted</th><th>Status</th>
+      <th class="r">Decision</th></tr>
+    @if (Model.Rows.Any())
+{
+    foreach (var row in Model.Rows)
+    {
+<text>
+      @{
+    var e = row.Expert;
+}
+      <tr>
+        <td><div class="who">@await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = e.User, Box = "ava ava-sm", Fallback = "av av-sm" })
+          <span><b>@(e.User.FullName)</b><span class="m-small">@(e.User.Email)</span></span></div></td>
+        <td class="nw">@(e.Specialization)<br><span class="m-small">@(e.User.City)</span></td>
+        <td><div class="docs">
+          @foreach (var pill in row.Pills)
+{
+<text>
+            <span class="docpill"><i class="bi @(pill.Status == "Approved" ? "bi-check2" : (pill.Status == "Rejected" ? "bi-x" : "bi-hourglass"))"></i> @(pill.Label)</span>
+          </text>
+}
+          @foreach (var type in row.Missing)
+{
+<text>
+            <span class="docpill"><i class="bi bi-dash"></i> @(Helpers.Before(type, " ")) missing</span>
+          </text>
+}
+        </div></td>
+        <td class="nw"><span class="m-small">@(Helpers.Truthy(row.Submitted) ? Helpers.ParseDate(row.Submitted).DiffForHumans() : "nothing yet")</span></td>
+        <td>@if (row.State == "needs")
+{
+<text><span class="st" style="background:var(--danger-bg);color:var(--danger)">Needs documents</span></text>
+}
+else if (row.State == "review")
+{
+<text><span class="st progress">In review</span></text>
+}
+else
+{
+<text><span class="st open">Waiting for review</span></text>
+}</td>
+        <td class="r">
+          <a class="iact" href="@(Routes.To("admin.application", new { expert = e.ExpertId }))" aria-label="Open the application"><i class="bi bi-eye"></i></a>
+          @if (row.State == "waiting")
+{
+<text>
+            <form method="POST" action="@(Routes.To("admin.verification.assign", new { expert = e.ExpertId }))" style="display:inline">@Html.AntiForgeryToken()
+              <button type="submit" class="iact g" aria-label="Assign to me"><i class="bi bi-check-lg"></i></button>
+            </form>
+          </text>
+}
+        </td>
+      </tr>
+    </text>
+    }
+}
+else
+{
+<text>
+      <tr><td colspan="6"><p class="m-body" style="padding:18px 0">No application is waiting in this tab.</p></td></tr>
+    </text>
+}
+  </table></div>
+    @await Html.PartialAsync("~/Views/Components/_Pager.cshtml", new PagerModel { Pager = Model.Pager, Unit = "application" })</div>
+</div>
+<div class="d3">
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">What to check</h3><p class="m-small">Masar verification rules</p></div></div>
+  <div class="dcb p"><div class="ckl">
+      <div><i class="bi bi-check-circle-fill"></i> The professional certificate names the applicant</div>
+      <div><i class="bi bi-check-circle-fill"></i> The commercial registration is valid and the name matches the account</div>
+      <div><i class="bi bi-check-circle-fill"></i> The professional licence covers the specialization</div>
+      <div><i class="bi bi-check-circle-fill"></i> The portfolio belongs to the applicant</div>
+      <div><i class="bi bi-check-circle-fill"></i> The specialization matches the work shown</div>
+    </div>
+    <div class="note" style="margin-top:18px"><i class="bi bi-clock-history"></i>
+      Answer every application within 2 working days. A rejection must name the reason,
+      and the applicant can upload a new document for it.</div></div>
+</div>
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Why documents are rejected</h3><p class="m-small">@(Model.Decisions.Rejected) @(Helpers.Plural("rejection", Model.Decisions.Rejected)) in total</p></div></div>
+  <div class="dcb p"><div class="mix">
+      @{
+    var total = Helpers.Or(Model.RejectReasons.Values.Sum(), 1);
+}
+      @if (Model.RejectReasons.Any())
+{
+    foreach (var loop in Model.RejectReasons.Pairs().Loop())
+    {
+<text>@{ var (type, count) = loop.Item; }
+        <div class="mixrow"><div class="t"><span>@(type)</span><b>@(count)</b></div>
+        <div class="tr"><i style="width:@(Helpers.ToInt32(Helpers.Round(count / total * 100)))%;background:@(C.DONUT[loop.Index % C.DONUT.Count()])"></i></div></div>
+      </text>
+    }
+}
+else
+{
+<text>
+        <p class="m-small">No document has been rejected yet.</p>
+      </text>
+}
+    </div>
+    <div class="note" style="margin-top:20px"><i class="bi bi-envelope"></i>
+      A rejected applicant sees the reason on their documents page and can upload a new file for it.</div></div>
+</div>
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Decisions</h3><p class="m-small">@(Helpers.ArraySum(Model.Decisions)) @(Helpers.Plural("document", Helpers.ArraySum(Model.Decisions)))</p></div></div>
+  <div class="dcb p"><div class="center">@Html.Raw(C.Donut(new List<(double Value, string Color)> { ((double)(Model.Decisions.Approved), "#024940"), ((double)(Model.Decisions.Rejected), "#8BA894"), ((double)(Model.Decisions.InReview + Model.Decisions.Uploaded), "#DCEAE1") }, Convert.ToString(Helpers.ArraySum(Model.Decisions)), "documents", 186, 28))</div><div class="don-leg">
+      <div><em style="background:#024940"></em> Approved <b>@(Model.Decisions.Approved)</b></div>
+      <div><em style="background:#8BA894"></em> Rejected <b>@(Model.Decisions.Rejected)</b></div>
+      <div><em style="background:#DCEAE1"></em> Still waiting <b>@(Model.Decisions.InReview + Model.Decisions.Uploaded)</b></div>
+    </div></div>
+</div>
+</div>

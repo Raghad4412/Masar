@@ -1,0 +1,157 @@
+@model Masar.ViewModels.ExpertArea.ExpertSessionViewModel
+@{
+    Layout = "~/Views/Shared/_Dash.cshtml";
+    ViewData["panel"] = "expert";
+    ViewData["dmeCaption"] = Model.DmeCaption;
+    ViewData["title"] = Model.Session.Reference + " - Masar";
+    ViewData["dtitle"] = "Bookings";
+    ViewData["dcrumb"] = Model.Session.Reference;
+}
+<div class="d2">
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Session with @(Model.Client?.FullName)</h3><p class="m-small">@(Model.Session.Reference)@if (Helpers.Truthy(Model.Payment))
+{
+<text> &middot; booked @(Model.Payment.PaymentDate.Format("j M Y"))</text>
+}</p></div><div class="sp">@await Html.PartialAsync("~/Views/Components/_Status.cshtml", new StatusModel { Kind = "session", Value = Model.Session.SessionStatus })</div></div>
+  <div class="dcb p">
+    <div class="conf-grid">
+      <div><span class="m-small">Date and time</span><b>@(Model.Session.StartsAt().Format("l j M Y")) &middot; @(Model.Session.SlotLabel) - @(Helpers.Substr(Model.Session.TimeString("End_Time"), 0, 5))</b></div>
+      <div><span class="m-small">Type</span><b>@(Model.Type?.TypeName) &middot; @(Config.Masar.SessionMinutes) min</b></div>
+      <div><span class="m-small">Topic</span><b>@(Model.Session.SessionTopic)</b></div>
+      <div><span class="m-small">You receive</span><b>@(Helpers.NumberFormat(Helpers.MasarPayout(Model.Session.Price), 2)) SAR</b></div>
+    </div>
+    @if (Helpers.Truthy(Model.Files))
+{
+<text>
+      <div class="files" style="margin-top:18px">
+        @foreach (var file in Model.Files)
+{
+<text>
+          <a class="file" href="@(Routes.Asset(file.Path))"><i class="bi bi-paperclip"></i> @(file.Name) <span class="m-small">@(FileService.Size(file.Size))</span></a>
+        </text>
+}
+      </div>
+    </text>
+}
+    <div class="pc-foot">
+      @if (Helpers.Truthy(Model.CanComplete))
+{
+<text>
+        <form method="POST" action="@(Routes.To("expert.session.complete", new { session = Model.Session.ConsultationSessionId }))" style="flex:1"
+              data-ms-confirm="Masar releases @(Helpers.NumberFormat(Helpers.MasarPayout(Model.Session.Price), 2)) SAR to you and the client can leave a review. A completed session cannot be reopened."
+              data-ms-confirm-title="Mark this session as completed?"
+              data-ms-confirm-ok="Yes, it is completed" data-ms-confirm-cancel="Not yet">@Html.AntiForgeryToken()
+          <button type="submit" class="m-btn m-btn-primary m-btn-block"><i class="bi bi-check2-circle"></i> Mark as completed</button>
+        </form>
+      </text>
+}
+      @if (Helpers.Truthy(Model.CanCancel))
+{
+<text>
+        <a href="#" class="m-btn m-btn-outline" data-ms-open="ms-expert-cancel"><i class="bi bi-x-circle"></i> Cancel the session</a>
+      </text>
+}
+    </div>
+    @if ((Model.Session.SessionStatus == "Scheduled") && !Helpers.Truthy(Model.CanComplete))
+{
+<text>
+      <p class="m-help" style="margin-top:10px">You can mark the session completed once it has ended
+        (@(Model.Session.EndsAt().Format("j M Y, H:i"))).</p>
+    </text>
+}
+  </div>
+</div>
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Status</h3><p class="m-small">From the booking to your payout</p></div></div>
+  <div class="dcb p"><div class="vtl">
+      @foreach (var (i, step) in Model.Timeline.Pairs())
+{
+<text>
+        @{
+    var cls = Helpers.Truthy(step.Done) ? "done" : (((i > 0) && Helpers.Truthy(Model.Timeline[i - 1].Done)) ? "live" : "");
+}
+        <div class="vt @(cls)"><span class="d">@if (Helpers.Truthy(step.Done))
+{
+<text><i class="bi bi-check-lg"></i></text>
+}
+else if (cls == "live")
+{
+<text><i class="bi bi-calendar-check"></i></text>
+}</span>
+          <div><b>@(step.Label)@if ((step.Label == "Paid") && Helpers.Truthy(Model.Payment))
+{
+<text> &middot; @(Helpers.NumberFormat(Convert.ToDouble(Model.Payment.Amount), 2)) SAR</text>
+}</b>
+            <p class="m-small">@(Helpers.Truthy(step.At) ? step.At.Format("j M Y, H:i") : "not yet")</p></div></div>
+      </text>
+}
+    </div></div>
+</div>
+</div>
+<div class="dcard" id="messages">
+  <div class="dch"><div><h3 class="m-h3">Messages</h3><p class="m-small">Inside this booking</p></div></div>
+  <div class="dcb p">
+    <div class="chat">
+      @if (Model.Messages.Any())
+{
+    foreach (var message in Model.Messages)
+    {
+<text>
+        @{
+    var mine = message.SenderUserId == AuthUser?.UserId;
+}
+        <div class="msg @(Helpers.Truthy(mine) ? "me" : "them")">@if (!(Helpers.Truthy(mine)))
+{
+<text>@await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = message.Sender, Box = "ava ava-sm", Fallback = "av av-sm" })</text>
+}
+          <div><p>@(message.MessageText)</p>
+          <span class="t">@(Helpers.Truthy(mine) ? "You" : message.Sender.FirstName) &middot; @(message.SentDate.Format("j M, H:i"))</span></div></div>
+      </text>
+    }
+}
+else
+{
+<text>
+        <p class="m-small">No messages yet. Write the first one below.</p>
+      </text>
+}
+    </div>
+    <form class="chatbar" method="POST" action="@(Routes.To("expert.session.message", new { session = Model.Session.ConsultationSessionId }))">
+      @Html.AntiForgeryToken()
+      <div class="m-input @Html.Raw((Errors.GetBag("default").Has("Message_Text") ? " err " : ""))">
+        <input name="Message_Text" type="text" required maxlength="2000" placeholder="Write a message…">
+      </div>
+      <button type="submit" class="m-btn m-btn-primary"><i class="bi bi-send"></i></button>
+    </form>
+    @if (Errors.GetBag("default").Has("Message_Text"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle"></i> @(Errors.GetBag("default").First("Message_Text"))</p></text>
+}
+  </div>
+</div>
+
+@section Dialogs {
+
+@if (Helpers.Truthy(Model.CanCancel))
+{
+<text>
+  <div class="ms-dialog" id="ms-expert-cancel" hidden>
+    <form class="card pad" style="width:520px" method="POST" action="@(Routes.To("expert.session.cancel", new { session = Model.Session.ConsultationSessionId }))">
+      @Html.AntiForgeryToken()
+      <h3 class="m-h3">Cancel this session?</h3>
+      <p class="m-body" style="margin-top:10px">An expert cancellation always refunds the client in full,
+        whenever it happens. The slot is closed, not given back.</p>
+      <div class="m-fg" style="margin-top:18px">
+        <label class="m-label" for="cancel-reason">Reason <span class="opt">Optional</span></label>
+        <div class="m-input area"><textarea id="cancel-reason" name="reason" maxlength="300" placeholder="Tell the client why."></textarea></div>
+      </div>
+      <div class="d-flex gap-3" style="margin-top:20px;justify-content:flex-end">
+        <button type="button" class="m-btn m-btn-outline" data-ms-close>Keep the session</button>
+        <button type="submit" class="m-btn m-btn-primary">Cancel the session</button>
+      </div>
+    </form>
+  </div>
+</text>
+}
+
+}

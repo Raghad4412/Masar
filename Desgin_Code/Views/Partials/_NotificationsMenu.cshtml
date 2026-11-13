@@ -1,0 +1,22 @@
+<div class="ms-menu" id="ms-notifications" hidden>
+  @if ((Notifications ?? new()).Any())
+{
+    foreach (var n in (Notifications ?? new()))
+    {
+<text>
+    <span class="ms-note @(Helpers.Truthy(n.Unread) ? "unread" : "")">
+      @(n.Text)
+      <small>@(n.When)</small>
+    </span>
+  </text>
+    }
+}
+else
+{
+<text>
+    <span class="ms-note">Nothing new yet.<small>New proposals, payments and messages appear here.</small></span>
+  </text>
+}
+  <hr>
+  <a href="@(Routes.To("notifications"))"><i class="bi bi-bell"></i> See all notifications</a>
+</div>

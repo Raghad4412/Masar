@@ -1,0 +1,515 @@
+@model Masar.ViewModels.Landing.LandingViewModel
+@{
+    Layout = "~/Views/Shared/_Landing.cshtml";
+    ViewData["title"] = "Masar - Your Business Partner";
+}
+<section class="m-hero">
+  @await Html.PartialAsync("~/Views/Svg/_HeroArt.cshtml")
+
+  <div class="wrap">
+    @if (Helpers.Truthy(Model.HeroExpert))
+{
+<text>
+    <div class="m-float">
+      <div class="d-flex align-items-center gap-3">
+        @await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = Model.HeroExpert.User, Box = "ava" })
+        <div>
+          <div class="m-h4" style="font-size:16px">@(Model.HeroExpert.User.FullName)</div>
+          <p class="m-small">@(Model.HeroExpert.Specialization) · @(Model.HeroExpert.User.City)</p>
+        </div>
+      </div>
+      <div class="m-stars" style="margin-top:14px">
+        @await Html.PartialAsync("~/Views/Components/_Stars.cshtml", new StarsModel { Rating = Model.HeroExpert.Rating, Bare = true })
+        <span style="margin-left:4px">@(Helpers.NumberFormat(Convert.ToDouble(Model.HeroExpert.Rating), 1))</span><span class="m-small">(@(Model.HeroReviews) @(Helpers.Plural("review", Model.HeroReviews)))</span>
+      </div>
+      @foreach (var slot in Model.HeroSlots)
+{
+<text>
+        <div class="slot"><span><i class="bi bi-calendar3"></i> @(slot.StartsAt().Format("D j M")) · @(slot.SlotLabel)</span><span style="color:var(--sage);font-weight:600">Free</span></div>
+      </text>
+}
+      <div class="note"><i class="bi bi-patch-check-fill"></i> Verified · documents approved</div>
+      <a href="@(Routes.To("experts.show", new { expert = Model.HeroExpert.ExpertId }))" class="m-btn m-btn-primary" style="width:100%;margin-top:14px">Book a session · @(Helpers.Sar(Model.HeroExpert.SessionPrice, 0)) SAR</a>
+    </div>
+    </text>
+}
+
+    <span class="m-eyebrow">Guidance for a brighter tomorrow</span>
+    <h1 class="m-display">Your business partner,<br>from the first idea<br>to <span style="border-bottom:8px solid rgba(98,135,110,.26);padding-bottom:2px">real growth</span>.</h1>
+    <p class="m-lead">Book verified consultants, request professional services and follow every step of
+      your business journey: consulting, finance, legal advice, branding, packaging and interior
+      design, all in one place.</p>
+
+    <form class="m-search" method="GET" action="@(Routes.To("experts.index"))">
+      <div class="m-field">
+        <label for="hero-spec">What do you need?</label>
+        <div class="m-input">
+          <select id="hero-spec" name="spec">
+            <option value="">Choose a specialization</option>
+            @foreach (var spec in Config.Masar.Specializations)
+{
+<text>
+              <option value="@(spec)">@(spec)</option>
+            </text>
+}
+          </select>
+          <i class="bi bi-chevron-down"></i>
+        </div>
+      </div>
+      <div class="m-field">
+        <label for="hero-city">City</label>
+        <div class="m-input">
+          <select id="hero-city" name="city">
+            <option value="">All cities</option>
+            @foreach (var city in Config.Masar.Cities)
+{
+<text>
+              <option value="@(city)">@(city)</option>
+            </text>
+}
+          </select>
+          <i class="bi bi-chevron-down"></i>
+        </div>
+      </div>
+      <div class="m-field">
+        <label for="hero-budget">Budget</label>
+        <div class="m-input">
+          <select id="hero-budget" name="budget">
+            <option value="">Any budget</option>
+            @foreach (var budget in Config.Masar.Budgets)
+{
+<text>
+              <option value="@(budget)">@(budget)</option>
+            </text>
+}
+          </select>
+          <i class="bi bi-chevron-down"></i>
+        </div>
+      </div>
+      <div class="m-field d-flex align-items-end">
+        <button type="submit" class="m-btn m-btn-primary" style="height:46px;width:100%"><i class="bi bi-search"></i> Search</button>
+      </div>
+    </form>
+
+    <div class="m-hero-proof">
+      <div class="m-stack">
+        @foreach (var e in Model.TopExperts.Take(4))
+{
+<text><span>@if (Helpers.Truthy(e.User.Photo))
+{
+<text><img src="@(e.User.Photo)" alt=""></text>
+}
+else
+{
+<text><span class="ms-initials">@(e.User.Initials)</span></text>
+}</span></text>
+}@if (Model.VerifiedExperts > 4)
+{
+<text><span style="font-size:12px;font-weight:700;color:var(--teal)">+@(Model.VerifiedExperts - 4)</span></text>
+}
+      </div>
+      <p class="m-small"><strong style="color:var(--ink)">@(Helpers.NumberFormat(Model.VerifiedExperts)) verified experts</strong> across @(Config.Masar.Specializations.Count()) specializations
+        · @(Helpers.NumberFormat(Model.CompletedBookings)) completed bookings</p>
+    </div>
+  </div>
+</section>
+
+<section class="m-strip">
+  <div class="wrap">
+    <div class="it"><div class="m-ico"><i class="bi bi-patch-check"></i></div>
+      <div><div class="m-h4">Verified experts only</div><p class="m-small">Licences and certificates checked by our team.</p></div></div>
+    <div class="it"><div class="m-ico"><i class="bi bi-shield-lock"></i></div>
+      <div><div class="m-h4">Protected payments</div><p class="m-small">mada, Apple Pay or card, released on completion.</p></div></div>
+    <div class="it"><div class="m-ico"><i class="bi bi-chat-square-text"></i></div>
+      <div><div class="m-h4">Everything in one project</div><p class="m-small">Chat, files and sessions kept together.</p></div></div>
+    <div class="it"><div class="m-ico"><i class="bi bi-receipt"></i></div>
+      <div><div class="m-h4">Clear prices</div><p class="m-small">Commission and VAT shown before you pay.</p></div></div>
+  </div>
+</section>
+
+<section class="ms-marquee" id="fields">
+  <div class="wrap">
+    <div class="m-head">
+      <span class="m-eyebrow">Live on Masar</span>
+      <h2 class="m-h2">What is moving on the platform today</h2>
+    </div>
+  </div>
+  
+  <div class="ms-marquee-row">
+    <div class="ms-marquee-track">
+      @foreach (var (spec, meta) in Model.SpecMeta.Pairs())
+{
+<text>
+        @{
+    var card = (Model.SpecCards.ContainsKey(spec) ? Model.SpecCards[spec] : new SpecializationCard());
+}
+        <a class="ms-mq" href="@(Routes.To("experts.index", new { spec = spec }))">
+          <i class="bi @(meta.Icon)"></i><b>@(spec)</b>
+          <span>@if (Helpers.Truthy(card.From))
+{
+<text>from @(Helpers.Sar(card.From, 0)) SAR</text>
+}
+else
+{
+<text> new field </text>
+}</span>
+        </a>
+      </text>
+}
+    </div>
+  </div>
+  
+  <div class="ms-marquee-row rtl">
+    <div class="ms-marquee-track">
+      <span class="ms-mq solid"><i class="bi bi-patch-check-fill"></i><b>@(Model.VerifiedExperts)</b><span>verified experts</span></span>
+      <span class="ms-mq"><i class="bi bi-calendar2-check"></i><b>@(Model.CompletedBookings)</b><span>consultations completed</span></span>
+      <span class="ms-mq"><i class="bi bi-shield-lock"></i><b>Payment held by Masar</b><span>released on completion</span></span>
+      <span class="ms-mq"><i class="bi bi-lightbulb"></i><b>@(Model.IdeaFounders)</b><span>business idea packages</span></span>
+      <span class="ms-mq"><i class="bi bi-receipt"></i><b>20% commission, 15% VAT</b><span>shown before you pay</span></span>
+      <span class="ms-mq solid"><i class="bi bi-chat-square-text"></i><b>Chat, files and sessions</b><span>kept in one project</span></span>
+      <span class="ms-mq"><i class="bi bi-cash-coin"></i><b>From @(Helpers.Sar(Model.MinConsultation, 0)) SAR</b><span>for a consultation</span></span>
+      <span class="ms-mq"><i class="bi bi-geo-alt"></i><b>Eastern Province</b><span>and across the Kingdom</span></span>
+    </div>
+  </div>
+</section>
+
+<section class="m-sec m-sec-mint" id="how">
+  <div class="wrap">
+    <div class="m-head" style="margin-bottom:46px">
+      <span class="m-eyebrow">How Masar works</span>
+      <h2 class="m-h2">A clear path, four simple steps</h2>
+      <p class="m-lead">Whether you book an hour with a consultant or hand a whole project to a specialist,
+        the journey is the same, and you always know where you stand.</p>
+    </div>
+    <div class="m-steps">
+      <div class="m-step">
+        <div class="n">1</div>
+        <h4 class="m-h4">Tell us what you need</h4>
+        <p class="m-body">Pick a specialization, or describe your project and budget. No idea yet? Masar
+          suggests one that fits your budget, interests and city.</p>
+      </div>
+      <div class="m-step">
+        <div class="n">2</div>
+        <h4 class="m-h4">Choose your expert</h4>
+        <p class="m-body">Compare experience, portfolio, prices, free times and real client reviews, then
+          shortlist the people you trust.</p>
+      </div>
+      <div class="m-step">
+        <div class="n">3</div>
+        <h4 class="m-h4">Book or accept a proposal</h4>
+        <p class="m-body">Reserve a session in a free time slot, or review the proposals you receive and
+          accept the one that fits your scope.</p>
+      </div>
+      <div class="m-step">
+        <div class="n">4</div>
+        <h4 class="m-h4">Work, track and grow</h4>
+        <p class="m-body">Pay securely, follow the status from pending to completed, keep your invoice and
+          rate your expert at the end.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="m-sec">
+  <div class="wrap">
+    <div class="m-head" style="margin-bottom:46px">
+      <span class="m-eyebrow">What is Masar</span>
+      <h2 class="m-h2">One platform, three ways to move forward</h2>
+      <p class="m-lead">An hour of advice, a finished piece of work, or the business idea itself.
+        Whichever stage you are at, you work with verified Saudi experts and pay one clear price.</p>
+    </div>
+
+    <div class="m-pillars">
+      <div class="m-pillar">
+        <div class="pic"><i class="bi bi-chat-quote"></i></div>
+        <h3 class="m-h3">Consultation</h3>
+        <p class="m-body">Book a session with a verified consultant in Legal, Finance or Business and leave
+          with answers you can act on: contracts, licences, pricing, funding or growth.</p>
+        <div class="m-tick"><i class="bi bi-check-circle-fill"></i> Choose the consultant and a free time slot</div>
+        <div class="m-tick"><i class="bi bi-check-circle-fill"></i> Meet online and chat before and after</div>
+        <div class="m-tick"><i class="bi bi-check-circle-fill"></i> One price, set by the consultant</div>
+        <div class="foot"><span class="m-price">From @(Helpers.Sar(Model.MinConsultation, 0)) SAR / session</span>
+          <a class="m-link" href="@(Routes.To("consultation"))">Book <i class="bi bi-arrow-right"></i></a></div>
+      </div>
+
+      <div class="m-pillar">
+        <div class="pic"><i class="bi bi-clipboard2-check"></i></div>
+        <h3 class="m-h3">Services</h3>
+        <p class="m-body">Hand a whole piece of work to a specialist: brand identity, packaging, interior
+          design, a feasibility study or a licensing file.</p>
+        <div class="m-tick"><i class="bi bi-check-circle-fill"></i> Post one request with your budget, deadline and service type</div>
+        <div class="m-tick"><i class="bi bi-check-circle-fill"></i> Receive proposals and compare them side by side</div>
+        <div class="m-tick"><i class="bi bi-check-circle-fill"></i> Accept one and follow the work to delivery</div>
+        <div class="foot"><span class="m-price">From @(Helpers.Sar(Model.MinService, 0)) SAR / project</span>
+          <a class="m-link" href="@(Routes.To("services.index"))">Post a request <i class="bi bi-arrow-right"></i></a></div>
+      </div>
+
+      <div class="m-pillar hi">
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="pic"><i class="bi bi-lightbulb"></i></div>
+          <span class="m-chip m-chip-light">Most popular</span>
+        </div>
+        <h3 class="m-h3">Business Idea Package</h3>
+        <p class="m-body">You have the capital but not the idea. We study your budget, your interests and your
+          city, then hand you ideas you can actually start.</p>
+        <div class="m-tick"><i class="bi bi-check-circle-fill"></i> Three ideas matched to your budget and city</div>
+        <div class="m-tick"><i class="bi bi-check-circle-fill"></i> Estimated start-up cost for each one</div>
+        <div class="m-tick"><i class="bi bi-check-circle-fill"></i> One consultation included to choose between them</div>
+        <div class="foot"><span class="m-price">@(Helpers.Sar(Config.Masar.IdeaPrice, 0)) SAR / package</span>
+          <a class="m-link" href="@(Routes.To("ideas.create"))">Get my idea <i class="bi bi-arrow-right"></i></a></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="m-sec">
+  <div class="wrap">
+    <div class="m-cta">
+      @await Html.PartialAsync("~/Views/Svg/_CtaArt.cshtml")
+      <div style="position:relative">
+        <h2 class="m-h2">Start your path today</h2>
+        <p class="m-lead" style="margin-top:12px">Creating an account is free. You only pay when you book a
+          consultation or accept a proposal.</p>
+      </div>
+      <div class="d-flex gap-3" style="position:relative">
+        <a href="@(Routes.To("experts.index"))" class="m-btn m-btn-outline">Browse experts</a>
+        <a href="@(Routes.To("register"))" class="m-btn m-btn-primary">Create a free account</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="m-sec">
+  <div class="wrap">
+    <div class="m-head-row" style="margin-bottom:44px">
+      <div class="m-head">
+        <span class="m-eyebrow">Our specializations</span>
+        <h2 class="m-h2">Six fields, one trusted platform</h2>
+      </div>
+      <a class="m-link" href="@(Routes.To("experts.index"))">Browse all experts <i class="bi bi-arrow-right"></i></a>
+    </div>
+    <div class="m-grid-3">
+      @foreach (var (spec, meta) in Model.SpecMeta.Pairs())
+{
+<text>
+        @{
+    var card = (Model.SpecCards.ContainsKey(spec) ? Model.SpecCards[spec] : new SpecializationCard());
+}
+        <div class="m-card m-spec">
+          <div class="halo"><span class="disc"><i class="bi @(meta.Icon)"></i></span></div>
+          <h4 class="m-h4">@(spec)</h4>
+          <p class="m-body">@(meta.Text)</p>
+          <div class="foot"><span class="m-price">@if (Helpers.Truthy(card.From))
+{
+<text>From @(Helpers.Sar(card.From, 0)) SAR / @(meta.Unit)</text>
+}
+else
+{
+<text> No experts yet </text>
+}</span><span class="m-small">@(card.Experts) @(Helpers.Plural("expert", card.Experts))</span></div>
+        </div>
+      </text>
+}
+    </div>
+  </div>
+</section>
+
+<section class="m-sec m-sec-mint">
+  <div class="wrap">
+    <div class="m-idea">
+      <div>
+        <span class="m-eyebrow">Business Idea Package</span>
+        <h2 class="m-h2" style="margin:16px 0 16px">You bring the capital.<br>We bring the idea.</h2>
+        <p class="m-lead">Tell us your budget, your interests and your city. Within three working days you
+          receive three business ideas that fit all three, each with an estimated start-up cost, a short
+          market note for your area and the first step to take.</p>
+        <div class="m-idea-steps">
+          <div class="st"><div class="n">STEP 1</div><div class="m-h4" style="margin:6px 0 4px">You tell us</div><p class="m-small">Your budget, interests and city.</p></div>
+          <div class="st"><div class="n">STEP 2</div><div class="m-h4" style="margin:6px 0 4px">We study</div><p class="m-small">Experts match ideas to your profile.</p></div>
+          <div class="st"><div class="n">STEP 3</div><div class="m-h4" style="margin:6px 0 4px">You choose</div><p class="m-small">Three ideas and a session to decide.</p></div>
+        </div>
+        <a href="@(Routes.To("ideas.create"))" class="m-btn m-btn-primary" style="margin-top:30px">Get my business idea</a>
+      </div>
+
+      <div class="m-idea-card">
+        <div class="d-flex align-items-center justify-content-between">
+          <span class="m-chip"><i class="bi bi-lightbulb-fill"></i> Idea Package</span>
+          <span class="m-price" style="font-size:26px;font-weight:800">@(Helpers.Sar(Config.Masar.IdeaPrice, 0)) SAR</span>
+        </div>
+        <h3 class="m-h3" style="margin:20px 0 14px">What you receive</h3>
+        <div class="inc"><i class="bi bi-check-circle-fill"></i> Three business ideas matched to your budget, interests and city</div>
+        <div class="inc"><i class="bi bi-check-circle-fill"></i> Estimated start-up cost and expected timeline for each idea</div>
+        <div class="inc"><i class="bi bi-check-circle-fill"></i> A short market note for your city and the first step to take</div>
+        <div class="inc"><i class="bi bi-check-circle-fill"></i> One 60-minute consultation with an expert in that field</div>
+        <div class="inc"><i class="bi bi-check-circle-fill"></i> A written summary kept in your project to share with partners</div>
+        <div style="background:var(--mint-50);border:1px solid var(--line);border-radius:var(--r-sm);padding:14px 16px;margin-top:20px">
+          <p class="m-small"><i class="bi bi-people-fill" style="color:var(--sage)"></i> @(Model.IdeaFounders) @(Helpers.Plural("founder", Model.IdeaFounders)) joined this package.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="m-sec">
+  <div class="wrap">
+    <div class="m-head-row" style="margin-bottom:44px">
+      <div class="m-head">
+        <span class="m-eyebrow">Verified experts</span>
+        <h2 class="m-h2">People you can trust with your capital</h2>
+      </div>
+      <a class="m-link" href="@(Routes.To("experts.index"))">See all @(Helpers.NumberFormat(Model.VerifiedExperts)) experts <i class="bi bi-arrow-right"></i></a>
+    </div>
+    <div class="m-grid-4">
+      @foreach (var e in Model.TopExperts)
+{
+<text>
+        <div class="m-card m-expert">
+          <div class="d-flex justify-content-between align-items-start">
+            @await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = e.User, Box = "ava" })
+            <span class="m-chip m-chip-sage"><i class="bi bi-patch-check-fill"></i> Verified</span>
+          </div>
+          <h4 class="m-h4" style="margin-top:18px">@(e.User.FullName)</h4>
+          <p class="m-small">@(e.Specialization) · @(e.User.City)</p>
+          <div class="m-stars" style="margin-top:12px">
+            @await Html.PartialAsync("~/Views/Components/_Stars.cshtml", new StarsModel { Rating = e.Rating, Bare = true })
+            @if (Helpers.Truthy(e.Rating))
+{
+<text><span style="margin-left:4px">@(Helpers.NumberFormat(Convert.ToDouble(e.Rating), 1))</span><span class="m-small">(@(Model.Stats.ExpertReviewCount(e)))</span></text>
+}
+else
+{
+<text><span class="m-small" style="margin-left:4px">No reviews yet</span></text>
+}
+          </div>
+          <p class="m-small" style="margin-top:8px"><i class="bi bi-award"></i> @(e.ExperienceYears) years of experience</p>
+          <div class="m-prow"><span class="p">@(Helpers.Sar(e.SessionPrice, 0)) <span style="font-size:13px;font-weight:600">SAR</span></span><span class="m-small">per @(e.IsConsultant() ? "session" : "project")</span></div>
+        </div>
+      </text>
+}
+    </div>
+  </div>
+</section>
+
+<section class="m-sec" id="pricing" style="padding-top:0">
+  <div class="wrap">
+    <div class="m-pricing">
+      <div>
+        <span class="m-eyebrow">Honest pricing</span>
+        <h2 class="m-h2" style="margin:16px 0 16px">You see the whole price<br>before you pay anything</h2>
+        <p class="m-lead">The expert sets the price. Masar adds a 20% platform commission and the 15% VAT
+          required in Saudi Arabia, and issues a tax invoice for every completed booking. Nothing appears later.</p>
+        <div class="d-flex gap-2 flex-wrap" style="margin-top:26px">
+          <span class="m-chip"><i class="bi bi-receipt"></i> Invoice for both sides</span>
+          <span class="m-chip"><i class="bi bi-arrow-counterclockwise"></i> Refund if the expert cancels</span>
+          <span class="m-chip"><i class="bi bi-wallet2"></i> Pay after you choose</span>
+        </div>
+      </div>
+      <div class="m-bill">
+        <p class="m-small" style="font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--sage)">
+          Example booking · MSR-C-2026-00142</p>
+        <div style="margin-top:14px">
+          <div class="ln"><span>Legal consultation, 60 minutes</span><span>450.00</span></div>
+          <div class="ln"><span>Platform commission (20%)</span><span>90.00</span></div>
+          <div class="ln"><span>VAT (15%)</span><span>67.50</span></div>
+          <div class="tot"><span class="l">Total</span><span class="v">607.50 SAR</span></div>
+        </div>
+        <div class="d-flex gap-2" style="margin-top:20px">
+          <span class="m-chip"><i class="bi bi-credit-card-2-front"></i> mada</span>
+          <span class="m-chip"><i class="bi bi-apple"></i> Apple Pay</span>
+          <span class="m-chip"><i class="bi bi-credit-card"></i> Card</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="m-sec m-sec-mint">
+  <div class="wrap">
+    <div class="m-head" style="margin-bottom:44px">
+      <span class="m-eyebrow">Client stories</span>
+      <h2 class="m-h2">From a first idea to an open business</h2>
+    </div>
+    <div class="m-grid-3">
+      @foreach (var review in Model.Stories)
+{
+<text>
+        <div class="m-card m-quote">
+          <div class="m-qmark">“</div>
+          <div class="m-stars">@await Html.PartialAsync("~/Views/Components/_Stars.cshtml", new StarsModel { Rating = review.Rating, Bare = true })</div>
+          <p class="m-body">@(review.Comment)</p>
+          <div class="m-who">
+            @await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = review.User, Box = "ava ava-sm" })
+            <div><div class="m-h4" style="font-size:15px">@(review.User.FullName)</div><p class="m-small">@(review.User.City)</p></div>
+          </div>
+        </div>
+      </text>
+}
+    </div>
+  </div>
+</section>
+
+@await Html.PartialAsync("~/Views/Svg/_ExpertIcon1.cshtml")
+
+<section class="m-band" id="experts">
+  <div class="wrap">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:70px;align-items:center">
+      <div>
+        <span class="m-eyebrow">For experts</span>
+        <h2 class="m-h2" style="margin:16px 0 18px">Reach clients far beyond<br>your personal network</h2>
+        <p class="m-body" style="font-size:17px;line-height:1.75">Build a professional profile, publish your
+          available times and your prices, and receive bookings and service requests from entrepreneurs across
+          the Kingdom. Payments are regulated and your invoice is issued automatically.</p>
+        <div class="d-flex gap-3" style="margin-top:32px">
+          <a href="#" class="m-btn" style="background:#fff;color:var(--teal)">Apply as an expert</a>
+          <a href="#" class="m-btn m-btn-light">See the requirements</a>
+        </div>
+      </div>
+      <div class="d-flex flex-column gap-3">
+        <div class="m-mini"><div class="n">1</div><div><div class="m-h4" style="color:#fff">Register and build your profile</div><p class="m-body" style="margin-top:5px">Bio, specialization, experience, portfolio and your session price.</p></div></div>
+        <div class="m-mini"><div class="n">2</div><div><div class="m-h4" style="color:#fff">Upload your documents</div><p class="m-body" style="margin-top:5px">Certificate, professional licence, commercial registration and portfolio.</p></div></div>
+        <div class="m-mini"><div class="n">3</div><div><div class="m-h4" style="color:#fff">Get verified by our team</div><p class="m-body" style="margin-top:5px">Reviewed within two working days, then the verified badge appears.</p></div></div>
+        <div class="m-mini"><div class="n">4</div><div><div class="m-h4" style="color:#fff">Receive bookings and requests</div><p class="m-body" style="margin-top:5px">Publish free slots, send proposals, track earnings after commission.</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+@await Html.PartialAsync("~/Views/Svg/_ExpertIcon2.cshtml")
+
+<section class="m-sec" id="faq">
+  <div class="wrap">
+    <div class="m-head" style="margin-bottom:40px">
+      <span class="m-eyebrow">Common questions</span>
+      <h2 class="m-h2">Before you create your account</h2>
+    </div>
+    <div class="m-grid-2">
+      <div class="m-card m-faq">
+        <div class="q"><i class="bi bi-question-circle-fill"></i><div>
+          <div class="m-h4">How do I know an expert is qualified?</div>
+          <p class="m-body" style="margin-top:8px">Every expert uploads a certificate, a professional licence,
+            a commercial registration and a portfolio. Our team reviews them, and only an approved expert carries
+            the verified badge and can receive bookings.</p></div></div>
+      </div>
+      <div class="m-card m-faq">
+        <div class="q"><i class="bi bi-question-circle-fill"></i><div>
+          <div class="m-h4">When is my money released to the expert?</div>
+          <p class="m-body" style="margin-top:8px">You pay when you confirm a booking or accept a proposal.
+            The amount is released after the consultation or the service is marked completed, minus the platform
+            commission.</p></div></div>
+      </div>
+      <div class="m-card m-faq">
+        <div class="q"><i class="bi bi-question-circle-fill"></i><div>
+          <div class="m-h4">Can I use Masar with no business idea?</div>
+          <p class="m-body" style="margin-top:8px">Yes. Enter your budget, your interests and your city, and
+            Masar suggests business ideas with an estimated start-up cost, then connects you with experts in
+            that field.</p></div></div>
+      </div>
+      <div class="m-card m-faq">
+        <div class="q"><i class="bi bi-question-circle-fill"></i><div>
+          <div class="m-h4">Do I receive a tax invoice?</div>
+          <p class="m-body" style="margin-top:8px">Yes. Every completed payment generates a numbered invoice
+            showing the price, the 20% platform commission and the 15% VAT, available to the client and the
+            expert.</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,123 @@
+@model Masar.ViewModels.Admin.ReportsViewModel
+@{
+    Layout = "~/Views/Shared/_Dash.cshtml";
+    ViewData["panel"] = "admin";
+    ViewData["dmeCaption"] = Model.DmeCaption;
+    ViewData["title"] = "Reports - Masar";
+    ViewData["dtitle"] = "Reports";
+    ViewData["dcrumb"] = "Reports";
+}
+@section DtopAction {
+
+  <button type="button" class="m-btn m-btn-primary m-btn-sm" onclick="window.print()"><i class="bi bi-printer"></i> Print</button>
+
+}
+
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Report period</h3>
+      <p class="m-small">@(Model.From.Format("j F Y")) to @(Model.To.Format("j F Y")) &middot;
+        @(Model.From.DiffInDays(Model.To) + 1) days</p></div>
+    <div class="sp">
+      <a class="m-btn m-btn-primary m-btn-sm" target="_blank" rel="noopener"
+         href="@(Routes.To("admin.reports.print", Http.QueryOnly("period", "from", "to")))"><i class="bi bi-printer"></i> Print this report</a>
+    </div></div>
+  <div class="dcb p">
+    <div class="seg" style="margin-bottom:18px">
+      <a href="@(Routes.To("admin.reports", new { period = "month" }))" class="@(Model.Period == "month" ? "on" : "")">This month</a>
+      <a href="@(Routes.To("admin.reports", new { period = "quarter" }))" class="@(Model.Period == "quarter" ? "on" : "")">Last 3 months</a>
+      <a href="@(Routes.To("admin.reports", new { period = "year" }))" class="@(Model.Period == "year" ? "on" : "")">This year</a>
+      <a href="@(Routes.To("admin.reports", new { period = "custom", from = Model.From.ToDateString(), to = Model.To.ToDateString() }))" class="@(Model.Period == "custom" ? "on" : "")">Custom</a>
+    </div>
+    <form class="ms-filter" method="GET" action="@(Routes.To("admin.reports"))">
+      <input type="hidden" name="period" value="custom">
+      <div class="f">
+        <label class="m-label" for="rp-from">From</label>
+        <div class="m-input"><input id="rp-from" name="from" type="date" value="@(Model.From.ToDateString())"
+               max="@(Clock.Now.ToDateString())"></div>
+      </div>
+      <div class="f">
+        <label class="m-label" for="rp-to">To</label>
+        <div class="m-input"><input id="rp-to" name="to" type="date" value="@(Model.To.ToDateString())"
+               max="@(Clock.Now.ToDateString())"></div>
+      </div>
+      <div class="acts">
+        <button type="submit" class="m-btn m-btn-primary"><i class="bi bi-funnel"></i> Apply the range</button>
+        <a class="m-btn m-btn-outline" href="@(Routes.To("admin.reports"))">Reset</a>
+      </div>
+    </form>
+    <p class="m-help" style="margin-top:12px">Money is counted from the payment date, sessions and
+      requests from their own date, so a range that ends today includes everything up to tonight.</p>
+  </div>
+</div>
+<div class="kpis">
+  <div class="kpi">
+    <div class="kpi-t"><span class="kpi-ic "><i class="bi bi-cash-stack"></i></span><span class="kpi-l">Paid through Masar</span></div>
+    <div class="kpi-v">@(Helpers.Sar(Model.Gross, 0)) <span>SAR</span></div>
+    <p class="m-small" style="margin-top:10px">Gross value of every booking in the period</p>
+  </div>
+  <div class="kpi">
+    <div class="kpi-t"><span class="kpi-ic green"><i class="bi bi-percent"></i></span><span class="kpi-l">Platform revenue</span></div>
+    <div class="kpi-v">@(Helpers.Sar(Model.Commission, 0)) <span>SAR</span></div>
+    <p class="m-small" style="margin-top:10px">@(Helpers.ToInt32((Config.Masar.Commission * 100)))% commission; VAT collected @(Helpers.Sar(Model.Vat, 0)) SAR</p>
+  </div>
+  <div class="kpi">
+    <div class="kpi-t"><span class="kpi-ic blue"><i class="bi bi-activity"></i></span><span class="kpi-l">Usage</span></div>
+    <div class="kpi-v">@(Model.SessionCount + Model.RequestCount)</div>
+    <p class="m-small" style="margin-top:10px">@(Model.SessionCount) @(Helpers.Plural("session", Model.SessionCount)) and @(Model.RequestCount) @(Helpers.Plural("request", Model.RequestCount))</p>
+  </div>
+  <div class="kpi">
+    <div class="kpi-t"><span class="kpi-ic gold"><i class="bi bi-emoji-smile"></i></span><span class="kpi-l">Client satisfaction</span></div>
+    <div class="kpi-v">@(Helpers.Truthy(Model.Satisfaction) ? Helpers.NumberFormat(Model.Satisfaction, 1) : "-") <span>/ 5</span></div>
+    <p class="m-small" style="margin-top:10px">@(Model.ReviewCount) @(Helpers.Plural("review", Model.ReviewCount)), @(Model.FiveStar) of them five stars</p>
+  </div>
+</div>
+<div class="d2">
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Revenue report</h3><p class="m-small">Gross value paid through Masar, last eight months</p></div></div>
+  <div class="dcb ">@Html.Raw(C.Area(Model.PaidByMonth.Keys.ToList(), Model.PaidByMonth.Values.ToList(), "rg", Model.PaidByMonth.Keys.LastOrDefault(), Helpers.Sar(Model.PaidByMonth.Values.Last(), 0) + " SAR"))<div class="chartfoot">
+      <div><span class="m-small">Gross in the period</span><b>@(Helpers.Sar(Model.Gross, 0)) SAR</b></div>
+      <div><span class="m-small">Masar commission</span><b>@(Helpers.Sar(Model.Commission, 0)) SAR</b></div>
+      <div><span class="m-small">VAT collected</span><b>@(Helpers.Sar(Model.Vat, 0)) SAR</b></div>
+      <div><span class="m-small">Paid to experts</span><b>@(Helpers.Sar(Model.Payouts, 0)) SAR</b></div>
+    </div></div>
+</div>
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Usage report</h3><p class="m-small">Requests per specialization</p></div></div>
+  <div class="dcb p"><div class="center">@Html.Raw(C.Donut(Model.ByField.Values.ToList().Select((n, i) => ((double)(n), C.DONUT[i % C.DONUT.Count()])).ToList(), Convert.ToString(Helpers.ArraySum(Model.ByField)), "requests"))</div><div class="don-leg">
+      @foreach (var loop in Model.ByField.Pairs().Loop())
+{
+<text>@{ var (field, count) = loop.Item; }
+        <div><em style="background:@(C.DONUT[loop.Index % C.DONUT.Count()])"></em> @(field) <b>@(count)</b></div>
+      </text>
+}
+    </div></div>
+</div>
+</div>
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Top rated experts</h3><p class="m-small">By the average of their visible reviews</p></div></div>
+  <div class="dcb t"><div class="md-table-scroll"><table class="dt2">
+    <tr><th>Expert</th><th>Specialization</th><th>Rating</th><th>Reviews</th><th>Completed</th><th class="r">Earned in the period</th></tr>
+    @if (Model.TopExperts.Any())
+{
+    foreach (var row in Model.TopExperts)
+    {
+<text>
+      <tr>
+        <td><div class="who">@await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = row.Expert.User, Box = "ava ava-sm", Fallback = "av av-sm" })<span>@(row.Expert.User.FullName)</span></div></td>
+        <td class="nw">@(row.Expert.Specialization)</td>
+        <td class="nw">@await Html.PartialAsync("~/Views/Components/_Stars.cshtml", new StarsModel { Rating = row.Expert.Rating }) @(Helpers.NumberFormat(Convert.ToDouble(row.Expert.Rating), 1))</td>
+        <td>@(row.Reviews)</td>
+        <td>@(row.Completed)</td>
+        <td class="r"><b>@(Helpers.Sar(row.Earned, 0)) SAR</b></td>
+      </tr>
+    </text>
+    }
+}
+else
+{
+<text>
+      <tr><td colspan="6"><p class="m-body" style="padding:18px 0">No expert has a rating yet.</p></td></tr>
+    </text>
+}
+  </table></div></div>
+</div>

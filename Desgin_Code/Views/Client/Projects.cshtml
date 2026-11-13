@@ -1,0 +1,114 @@
+@model Masar.ViewModels.Client.ProjectsViewModel
+@{
+    Layout = "~/Views/Shared/_App.cshtml";
+    ViewData["navItem"] = "bookings";
+    ViewData["title"] = "My Projects - Masar";
+}
+@section Crumb {
+
+  <span>Home</span><i class="bi bi-chevron-right"></i><span class="cur">My Projects</span>
+
+}
+
+<div class="wrap">
+  <div class="page-h">
+    <div><h1 class="m-h1">My Projects</h1><p class="m-body">Everything you have on Masar, in one place</p></div>
+    <a href="@(Routes.To("services.index"))" class="m-btn m-btn-primary"><i class="bi bi-plus-lg"></i> Start something new</a>
+  </div>
+  <div class="statrow">
+    <div class="stat"><span class="m-small">Upcoming sessions</span><b>@(Model.Tiles.Upcoming)</b></div>
+    <div class="stat"><span class="m-small">Open or in progress</span><b>@(Model.Tiles.Progress)</b></div>
+    <div class="stat"><span class="m-small">Completed</span><b>@(Model.Tiles.Completed)</b></div>
+    <div class="stat"><span class="m-small">Spent on Masar</span><b>@(Helpers.Sar(Model.Tiles.Spent, 0)) SAR</b></div>
+  </div>
+  <div class="card pad">
+    <div class="d-flex align-items-center justify-content-between">
+      <h3 class="m-h3">Consultations</h3><a class="m-link" href="@(Routes.To("bookings.index"))">My Bookings <i class="bi bi-arrow-right"></i></a>
+    </div>
+    @if (Model.Sessions.Any())
+{
+    foreach (var session in Model.Sessions)
+    {
+<text>
+      <div class="sline" style="padding:13px 0">
+        @await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = session.Expert?.User, Box = "ava ava-sm", Fallback = "av av-sm" })
+        <div><b>@(session.Expert?.User?.FullName)</b><p class="m-small">@(session.SessionTopic) &middot; @(session.StartsAt().Format("j M Y")) &middot; @(session.Reference)</p></div>
+        <span class="d-flex align-items-center gap-3">@await Html.PartialAsync("~/Views/Components/_Status.cshtml", new StatusModel { Kind = "session", Value = session.SessionStatus })
+          <a class="m-link" href="@(Routes.To("bookings.show", new { session = session.ConsultationSessionId }))">Open</a></span>
+      </div>
+    </text>
+    }
+}
+else
+{
+<text>
+      <p class="m-body" style="margin-top:12px">You have not booked a consultation yet.
+        <a class="m-link" href="@(Routes.To("consultation"))">Find a consultant</a></p>
+    </text>
+}
+  </div>
+  <div class="card pad" style="margin-top:20px">
+    <div class="d-flex align-items-center justify-content-between">
+      <h3 class="m-h3">Service requests</h3><a class="m-link" href="@(Routes.To("requests.index"))">My Requests <i class="bi bi-arrow-right"></i></a>
+    </div>
+    @if (Model.Requests.Any())
+{
+    foreach (var row in Model.Requests)
+    {
+<text>
+      @{
+    var accepted = row.AcceptedProposal();
+}
+      <div class="sline" style="padding:13px 0">
+        @await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = accepted?.Expert?.User, Box = "ava ava-sm", Fallback = "av av-sm", Name = row.Title })
+        <div><b>@(row.Title)</b><p class="m-small">@(row.FieldName()) · @(row.Type?.ServicePackge) &middot; @(row.Reference)@if (Helpers.Truthy(accepted))
+{
+<text> &middot; @(accepted.Expert?.User?.FullName)</text>
+}</p></div>
+        <span class="d-flex align-items-center gap-3">@await Html.PartialAsync("~/Views/Components/_Status.cshtml", new StatusModel { Kind = "request", Value = row.Status })
+          <a class="m-link" href="@(new[] { "In Progress", "Completed" }.Contains(row.Status) ? Routes.To("services.show", new { serviceRequest = row.ServiceRequestId }) : Routes.To("requests.show", new { serviceRequest = row.ServiceRequestId }))">Open</a></span>
+      </div>
+    </text>
+    }
+}
+else
+{
+<text>
+      <p class="m-body" style="margin-top:12px">You have not posted a service request yet.
+        <a class="m-link" href="@(Routes.To("services.index"))">Post one</a></p>
+    </text>
+}
+  </div>
+  <div class="card pad" style="margin-top:20px">
+    <div class="d-flex align-items-center justify-content-between">
+      <h3 class="m-h3">Business ideas</h3><a class="m-link" href="@(Routes.To("ideas.index"))">Business ideas <i class="bi bi-arrow-right"></i></a>
+    </div>
+    @if (Model.Ideas.Any())
+{
+    foreach (var row in Model.Ideas)
+    {
+<text>
+      <div class="sline" style="padding:13px 0">
+        <span class="av av-sm"><i class="bi bi-lightbulb"></i></span>
+        <div><b>@(row.IdeaName)</b><p class="m-small">@(row.Reference)@if (row.EstimatedCost() > 0)
+{
+<text> &middot; @(Helpers.Sar(row.EstimatedCost(), 0)) SAR estimated start-up cost</text>
+}@if (Helpers.Truthy(row.ExpirationDate))
+{
+<text> &middot; valid until @(row.ExpirationDate.Format("j M Y"))</text>
+}</p></div>
+        <span class="d-flex align-items-center gap-3">@await Html.PartialAsync("~/Views/Components/_Status.cshtml", new StatusModel { Kind = "idea", Value = row.Status })
+          <a class="m-link" href="@(Routes.To("ideas.show", new { idea = row.BusinessIdeaId }))">Open</a></span>
+      </div>
+    </text>
+    }
+}
+else
+{
+<text>
+      <p class="m-body" style="margin-top:12px">You have not asked for a Business Idea Package yet.
+        <a class="m-link" href="@(Routes.To("ideas.create"))">Get my idea</a></p>
+    </text>
+}
+  </div>
+</div>

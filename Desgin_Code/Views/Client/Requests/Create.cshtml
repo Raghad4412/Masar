@@ -1,0 +1,142 @@
+@model Masar.ViewModels.Client.RequestCreateViewModel
+@{
+    Layout = "~/Views/Shared/_App.cshtml";
+    ViewData["navItem"] = "requests";
+    ViewData["title"] = "Service Request - Masar";
+}
+@section Crumb {
+
+  <span>Home</span><i class="bi bi-chevron-right"></i><a href="@(Routes.To("services.index"))">Services</a><i class="bi bi-chevron-right"></i><a href="@(Routes.To("requests.create", new { field = Model.Field }))">@(Model.Field)</a><i class="bi bi-chevron-right"></i><span class="cur">Service Request</span>
+
+}
+
+<form method="POST" enctype="multipart/form-data"
+      action="@(Helpers.Truthy(Model.Editing) ? Routes.To("requests.update", new { serviceRequest = Model.Editing.ServiceRequestId }) : Routes.To("requests.store", new { field = Model.Field }))">
+  @Html.AntiForgeryToken()
+  @if (Helpers.Truthy(Model.Editing))
+{
+<text><input type="hidden" name="_method" value="PUT"></text>
+}
+  <input type="hidden" name="field" value="@(Model.Field)">
+  <div class="wrap narrow">
+    <div class="page-h">
+      <div><h1 class="m-h1">Service Request</h1>
+        <p class="m-body">Tell us what you need. Verified experts send you a proposal with a price,
+          a delivery time and a clear scope.</p></div>
+    </div>
+    <div class="card pad">
+      <h3 class="m-h3">Choose Service Type</h3>
+      <p class="m-small" style="margin-top:6px">Pick the level that fits your project. You can choose one.</p>
+      <div class="srgrid">
+        @foreach (var package in Model.Packages)
+{
+<text>
+          @{
+    var isOn = Convert.ToString(Old("Service_Type_ID", Model.Editing?.ServiceTypeId)) == Convert.ToString(package.ServiceTypeId);
+}
+          <label class="srbox @(Helpers.Truthy(isOn) ? "on" : "") @Html.Raw((Errors.GetBag("default").Has("Service_Type_ID") ? " err " : ""))">
+            <input class="ms-input" type="radio" name="Service_Type_ID" value="@(package.ServiceTypeId)" required @(Helpers.Truthy(isOn) ? "checked" : "")>
+            <span class="ck"><i class="bi bi-circle"></i></span>
+            <span class="t">@(package.ServicePackge)</span><span class="p">From @(Helpers.Sar(package.MinPrice, 0)) SAR</span>
+            <ul>@foreach (var bullet in package.Bullets)
+{
+<text><li><i class="bi bi-check2"></i> @(bullet)</li></text>
+}</ul>
+          </label>
+        </text>
+}
+      </div>
+      @if (Errors.GetBag("default").Has("Service_Type_ID"))
+{
+<text><p class="m-err" style="margin-top:14px"><i class="bi bi-exclamation-circle-fill"></i> @(Errors.GetBag("default").First("Service_Type_ID"))</p></text>
+}
+    </div>
+    <div class="card pad" style="margin-top:20px">
+      <div class="m-fg">
+        <label class="m-label" for="Title">Title <span class="req">Required</span></label>
+        <div class="m-input @Html.Raw((Errors.GetBag("default").Has("Title") ? " err " : ""))">
+          <input id="Title" name="Title" type="text" required minlength="5" maxlength="100"
+                 placeholder="Example: Logo design, Feasibility study, Packaging design"
+                 value="@(Old("Title", Model.Editing?.Title))">
+        </div>
+        @if (Errors.GetBag("default").Has("Title"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle-fill"></i> @(Errors.GetBag("default").First("Title"))</p></text>
+}
+      </div>
+      <div class="m-fg">
+        <label class="m-label" for="Request_Description">Service Description <span class="req">Required</span></label>
+        <div class="m-input area @Html.Raw((Errors.GetBag("default").Has("Request_Description") ? " err " : ""))">
+          <textarea id="Request_Description" name="Request_Description" required minlength="30" maxlength="2000"
+                    placeholder="Describe the work you need and anything the expert must know.">@(Old("Request_Description", Model.Editing?.RequestDescription))</textarea>
+        </div>
+        @if (Errors.GetBag("default").Has("Request_Description"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle-fill"></i> @(Errors.GetBag("default").First("Request_Description"))</p></text>
+}
+        <p class="m-help">Say what you need, the size of the work and anything the expert must know.</p>
+      </div>
+      <div class="m-fg">
+        <label class="m-label">Budget <span class="req">Required</span></label>
+        <div class="m-two">
+          <div>
+            <div class="m-input @Html.Raw((Errors.GetBag("default").Has("budget_min") ? " err " : ""))">
+              <input name="budget_min" type="number" required min="1" max="1000000" step="1" placeholder="Lowest"
+                     aria-label="Lowest budget" value="@(Old("budget_min", Model.Editing?.BudgetMin()))">
+              <span class="cur-sar">SAR</span>
+            </div>
+            <p class="m-help">Min</p>
+          </div>
+          <div>
+            <div class="m-input @Html.Raw((Errors.GetBag("default").Has("budget_max") ? " err " : ""))">
+              <input name="budget_max" type="number" required min="2" max="1000000" step="1" placeholder="Highest"
+                     aria-label="Highest budget" value="@(Old("budget_max", Model.Editing?.BudgetMax()))">
+              <span class="cur-sar">SAR</span>
+            </div>
+            <p class="m-help">Max</p>
+          </div>
+        </div>
+        @if (Errors.GetBag("default").Has("budget_min"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle-fill"></i> @(Errors.GetBag("default").First("budget_min"))</p></text>
+}
+        @if (Errors.GetBag("default").Has("budget_max"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle-fill"></i> @(Errors.GetBag("default").First("budget_max"))</p></text>
+}
+      </div>
+      <div class="m-fg">
+        <label class="m-label" for="Deadline">Service Delivery Date <span class="req">Required</span></label>
+        <div class="m-input @Html.Raw((Helpers.Truthy(Old("Deadline", Model.Editing?.Deadline)) ? " sel " : "")) @Html.Raw((Errors.GetBag("default").Has("Deadline") ? " err " : ""))" style="max-width:318px">
+          <input id="Deadline" name="Deadline" type="date" required
+                 min="@(Model.Earliest.ToDateString())"
+                 value="@(Old("Deadline", Model.Editing?.Deadline.ToDateString()))">
+          <i class="bi bi-calendar3"></i>
+        </div>
+        @if (Errors.GetBag("default").Has("Deadline"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle-fill"></i> @(Errors.GetBag("default").First("Deadline"))</p></text>
+}
+        <p class="m-help">The day you want to receive the finished work. Earliest delivery @(Model.Earliest.Format("j M Y")).</p>
+      </div>
+      <div class="m-fg" style="margin-bottom:0">
+        <label class="m-label">Files <span class="opt">Optional</span></label>
+        <label class="upbox ms-drop">
+          <input class="ms-file" type="file" name="files[]" multiple accept=".jpg,.jpeg,.png,.pdf,.zip">
+          <span class="ic"><i class="bi bi-cloud-arrow-up"></i></span>
+          <b>Drop your files here or browse</b>
+          <p class="m-small">Images, PDF or ZIP, up to 25 MB. Adding files is optional.</p>
+        </label>
+        <div class="files" style="margin-top:14px" data-ms-files="files[]"></div>
+        @if (Errors.GetBag("default").Has("files.*"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle-fill"></i> @(Errors.GetBag("default").First("files.*"))</p></text>
+}
+      </div>
+    </div>
+    <div class="srfoot">
+      <a href="@(Helpers.Truthy(Model.Editing) ? Routes.To("requests.show", new { serviceRequest = Model.Editing.ServiceRequestId }) : Routes.To("services.index"))" class="m-btn m-btn-outline">Cancel</a>
+      <button type="submit" class="m-btn m-btn-primary">@(Helpers.Truthy(Model.Editing) ? "Save the changes" : "Submit Request") <i class="bi bi-arrow-right"></i></button>
+    </div>
+  </div>
+</form>

@@ -1,0 +1,235 @@
+@model Masar.ViewModels.Admin.SpecializationsViewModel
+@{
+    Layout = "~/Views/Shared/_Dash.cshtml";
+    ViewData["panel"] = "admin";
+    ViewData["dmeCaption"] = Model.DmeCaption;
+    ViewData["title"] = "Specializations - Masar";
+    ViewData["dtitle"] = "Specializations";
+    ViewData["dcrumb"] = "Specializations";
+}
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Expert specializations</h3>
+      <p class="m-small">Fixed by the database: the six values an expert account can hold</p></div></div>
+  <div class="dcb p"><div class="taglist">
+      @foreach (var spec in Config.Masar.Specializations)
+{
+<text>
+        <span class="fchip @(((Model.ExpertCounts.ContainsKey(spec) ? Model.ExpertCounts[spec] : 0)) > 0 ? "on" : "")">@(spec) (@((Model.ExpertCounts.ContainsKey(spec) ? Model.ExpertCounts[spec] : 0)))</span>
+      </text>
+}
+    </div>
+    <div class="note" style="margin-top:18px"><i class="bi bi-info-circle"></i>
+      Consultations follow the expert's specialization: Legal Consulting → Legal consultation,
+      Financial Guidance → Financial consultation, Business Consulting → Business consultation.
+      The other three specializations deliver service requests.</div></div>
+</div>
+
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Consultation types</h3>
+      <p class="m-small">Base price is the lowest session price an expert of that field may set</p></div>
+    <div class="sp"><a class="m-btn m-btn-primary m-btn-sm" href="#" data-ms-open="ms-ct-add"><i class="bi bi-plus-lg"></i> Add a consultation type</a></div></div>
+  <div class="dcb t"><div class="md-table-scroll"><table class="dt2">
+    <tr><th>Name</th><th>Description</th><th class="r">Base price</th><th class="nw">In use</th><th class="r nw">Actions</th></tr>
+    @if (Model.ConsultationTypes.Any())
+{
+    foreach (var type in Model.ConsultationTypes)
+    {
+<text>
+      <tr>
+        <td><b>@(type.TypeName)</b></td>
+        <td><span class="m-small">@(Helpers.Or(type.Description, "No description yet."))</span></td>
+        <td class="r">@(Helpers.NumberFormat(Convert.ToDouble(type.BasePrice), 2))</td>
+        <td class="nw">
+          @if (type.SessionsCount > 0)
+{
+<text>
+            <span class="m-chip">@(type.SessionsCount) @(Helpers.Plural("session", type.SessionsCount))</span>
+          </text>
+}
+else
+{
+<text>
+            <span class="m-small">not used</span>
+          </text>
+}
+        </td>
+        <td class="r nw"><div class="ms-rowacts">
+          <a class="ms-act" href="#" data-ms-open="ms-ct-@(type.ConsultationTypeId)"><i class="bi bi-pencil"></i> Edit</a>
+          @if (type.SessionsCount > 0)
+{
+<text>
+            <span class="ms-act off" title="@(type.SessionsCount) @(Helpers.Plural("session", type.SessionsCount)) still use this type"><i class="bi bi-lock"></i> Delete</span>
+          </text>
+}
+else
+{
+<text>
+            <form method="POST" action="@(Routes.To("admin.consultationTypes.destroy", new { type = type.ConsultationTypeId }))"
+                  data-ms-confirm="Nothing points at @(type.TypeName), so it can go. An expert of that field will have no base price until another type covers it."
+                  data-ms-confirm-title="Delete @(type.TypeName)?"
+                  data-ms-confirm-ok="Delete the type" data-ms-confirm-cancel="Keep it"
+                  data-ms-confirm-tone="danger">@Html.AntiForgeryToken() <input type="hidden" name="_method" value="DELETE">
+              <button type="submit" class="ms-act danger"><i class="bi bi-trash"></i> Delete</button>
+            </form>
+          </text>
+}
+        </div></td>
+      </tr>
+    </text>
+    }
+}
+else
+{
+<text>
+      <tr><td colspan="5"><p class="m-body" style="padding:18px 0">No consultation type yet.</p></td></tr>
+    </text>
+}
+  </table></div></div>
+</div>
+
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Service types and packages</h3>
+      <p class="m-small">One row per field and package. The description is the card bullets, one per line</p></div>
+    <div class="sp"><a class="m-btn m-btn-primary m-btn-sm" href="#" data-ms-open="ms-st-add"><i class="bi bi-plus-lg"></i> Add a service package</a></div></div>
+  <div class="dcb t"><div class="md-table-scroll"><table class="dt2">
+    <tr><th>Field</th><th class="nw">Package</th><th>What it includes</th><th class="r nw">From</th><th class="nw">In use</th><th class="r nw">Actions</th></tr>
+    @if (Model.ServiceTypes.Any())
+{
+    foreach (var type in Model.ServiceTypes)
+    {
+<text>
+      <tr>
+        <td><b>@(type.TypeName)</b></td>
+        <td class="nw"><span class="m-chip">@(type.ServicePackge)</span></td>
+        <td><span class="m-small">@(Helpers.Or(Helpers.Limit(string.Join(" &middot; ", type.Bullets), 90), "No bullets yet."))</span><br>
+          <span class="m-small" style="color:#9BAFA6">@(type.Bullets.Count()) @(Helpers.Plural("bullet", type.Bullets.Count()))</span></td>
+        <td class="r nw">@(Helpers.NumberFormat(Convert.ToDouble(type.MinPrice), 2))</td>
+        <td class="nw">
+          @if (type.RequestsCount > 0)
+{
+<text>
+            <span class="m-chip">@(type.RequestsCount) @(Helpers.Plural("request", type.RequestsCount))</span>
+          </text>
+}
+else
+{
+<text>
+            <span class="m-small">not used</span>
+          </text>
+}
+        </td>
+        <td class="r nw"><div class="ms-rowacts">
+          <a class="ms-act" href="#" data-ms-open="ms-st-@(type.ServiceTypeId)"><i class="bi bi-pencil"></i> Edit</a>
+          @if (type.RequestsCount > 0)
+{
+<text>
+            <span class="ms-act off" title="@(type.RequestsCount) @(Helpers.Plural("request", type.RequestsCount)) still use this package"><i class="bi bi-lock"></i> Delete</span>
+          </text>
+}
+else
+{
+<text>
+            <form method="POST" action="@(Routes.To("admin.serviceTypes.destroy", new { type = type.ServiceTypeId }))"
+                  data-ms-confirm="No request points at the @(type.TypeName) @(type.ServicePackge) package, so it can go. Clients will no longer be offered it."
+                  data-ms-confirm-title="Delete this package?"
+                  data-ms-confirm-ok="Delete the package" data-ms-confirm-cancel="Keep it"
+                  data-ms-confirm-tone="danger">@Html.AntiForgeryToken() <input type="hidden" name="_method" value="DELETE">
+              <button type="submit" class="ms-act danger"><i class="bi bi-trash"></i> Delete</button>
+            </form>
+          </text>
+}
+        </div></td>
+      </tr>
+    </text>
+    }
+}
+else
+{
+<text>
+      <tr><td colspan="6"><p class="m-body" style="padding:18px 0">No service package yet.</p></td></tr>
+    </text>
+}
+  </table></div></div>
+</div>
+
+@section Dialogs {
+
+<div class="ms-dialog" id="ms-ct-add" hidden>
+  <form class="card pad" style="width:560px" method="POST" action="@(Routes.To("admin.consultationTypes.store"))">
+    @Html.AntiForgeryToken()
+    <h3 class="m-h3">Add a consultation type</h3>
+    <p class="m-small" style="margin-top:6px">An expert of this field may not price a session below the base price.</p>
+    <div class="m-two" style="margin-top:16px">
+      @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Type_Name", Label = "Name", Required = true, Placeholder = "Legal consultation", Bag = "ct_add", Attrs = new AttributeBag { ["maxlength"] = "60", ["id"] = "ct-add-name" } })
+      @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Base_Price", Label = "Base price (SAR)", Type = "number", Required = true, Bag = "ct_add", Attrs = new AttributeBag { ["min"] = "1", ["max"] = "20000", ["step"] = "1", ["id"] = "ct-add-price" } })
+    </div>
+    @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Description", Label = "Description", Area = true, Placeholder = "What this consultation covers.", Bag = "ct_add", Attrs = new AttributeBag { ["maxlength"] = "300", ["id"] = "ct-add-desc" } })
+    <div class="d-flex gap-3" style="margin-top:18px;justify-content:flex-end">
+      <button type="button" class="m-btn m-btn-outline" data-ms-close>Cancel</button>
+      <button type="submit" class="m-btn m-btn-primary"><i class="bi bi-plus-lg"></i> Add the type</button>
+    </div>
+  </form>
+</div>
+
+<div class="ms-dialog" id="ms-st-add" hidden>
+  <form class="card pad" style="width:560px" method="POST" action="@(Routes.To("admin.serviceTypes.store"))">
+    @Html.AntiForgeryToken()
+    <h3 class="m-h3">Add a service package</h3>
+    <p class="m-small" style="margin-top:6px">One field can hold a Standard, a Professional and a Premium package.</p>
+    <div class="m-two" style="margin-top:16px">
+      @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Type_Name", Label = "Field", Required = true, Placeholder = "Packaging", Bag = "st_add", Attrs = new AttributeBag { ["maxlength"] = "60", ["id"] = "st-add-name" } })
+      @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Service_Packge", Label = "Package", Options = new[] { "Standard", "Professional", "Premium" }, Required = true, Icon = "bi-chevron-down", Bag = "st_add", Attrs = new AttributeBag { ["id"] = "st-add-pkg" } })
+    </div>
+    @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Min_Price", Label = "Minimum price (SAR)", Type = "number", Required = true, Bag = "st_add", Attrs = new AttributeBag { ["min"] = "1", ["step"] = "1", ["id"] = "st-add-price" } })
+    @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Description", Label = "What it includes", Area = true, Required = true, Bag = "st_add", Placeholder = "One bullet per line.", Help = "One bullet per line; the package card lists them with a tick.", Attrs = new AttributeBag { ["maxlength"] = "400", ["id"] = "st-add-desc" } })
+    <div class="d-flex gap-3" style="margin-top:18px;justify-content:flex-end">
+      <button type="button" class="m-btn m-btn-outline" data-ms-close>Cancel</button>
+      <button type="submit" class="m-btn m-btn-primary"><i class="bi bi-plus-lg"></i> Add the package</button>
+    </div>
+  </form>
+</div>
+
+@foreach (var type in Model.ConsultationTypes)
+{
+<text>
+  <div class="ms-dialog" id="ms-ct-@(type.ConsultationTypeId)" hidden>
+    <form class="card pad" style="width:560px" method="POST" action="@(Routes.To("admin.consultationTypes.update", new { type = type.ConsultationTypeId }))">
+      @Html.AntiForgeryToken() <input type="hidden" name="_method" value="PUT">
+      <h3 class="m-h3">Edit @(type.TypeName)</h3>
+      <div class="m-two" style="margin-top:16px">
+        @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Type_Name", Label = "Name", Required = true, Value = type.TypeName, Bag = "ct_" + type.ConsultationTypeId, Attrs = new AttributeBag { ["maxlength"] = "60", ["id"] = Convert.ToString("ct-name-" + type.ConsultationTypeId) } })
+        @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Base_Price", Label = "Base price (SAR)", Type = "number", Required = true, Value = Helpers.ToInt32(type.BasePrice), Bag = "ct_" + type.ConsultationTypeId, Attrs = new AttributeBag { ["min"] = "1", ["max"] = "20000", ["step"] = "1", ["id"] = Convert.ToString("ct-price-" + type.ConsultationTypeId) } })
+      </div>
+      @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Description", Label = "Description", Area = true, Value = type.Description, Bag = "ct_" + type.ConsultationTypeId, Attrs = new AttributeBag { ["maxlength"] = "300", ["id"] = Convert.ToString("ct-desc-" + type.ConsultationTypeId) } })
+      <div class="d-flex gap-3" style="margin-top:18px;justify-content:flex-end">
+        <button type="button" class="m-btn m-btn-outline" data-ms-close>Cancel</button>
+        <button type="submit" class="m-btn m-btn-primary">Save the type</button>
+      </div>
+    </form>
+  </div>
+</text>
+}
+
+@foreach (var type in Model.ServiceTypes)
+{
+<text>
+  <div class="ms-dialog" id="ms-st-@(type.ServiceTypeId)" hidden>
+    <form class="card pad" style="width:560px" method="POST" action="@(Routes.To("admin.serviceTypes.update", new { type = type.ServiceTypeId }))">
+      @Html.AntiForgeryToken() <input type="hidden" name="_method" value="PUT">
+      <h3 class="m-h3">Edit @(type.TypeName) @(type.ServicePackge)</h3>
+      <div class="m-two" style="margin-top:16px">
+        @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Type_Name", Label = "Field", Required = true, Value = type.TypeName, Bag = "st_" + type.ServiceTypeId, Attrs = new AttributeBag { ["maxlength"] = "60", ["id"] = Convert.ToString("st-name-" + type.ServiceTypeId) } })
+        @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Service_Packge", Label = "Package", Options = new[] { "Standard", "Professional", "Premium" }, Required = true, Icon = "bi-chevron-down", Value = type.ServicePackge, Bag = "st_" + type.ServiceTypeId, Attrs = new AttributeBag { ["id"] = Convert.ToString("st-pkg-" + type.ServiceTypeId) } })
+      </div>
+      @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Min_Price", Label = "Minimum price (SAR)", Type = "number", Required = true, Value = Helpers.ToInt32(type.MinPrice), Bag = "st_" + type.ServiceTypeId, Attrs = new AttributeBag { ["min"] = "1", ["step"] = "1", ["id"] = Convert.ToString("st-price-" + type.ServiceTypeId) } })
+      @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Description", Label = "What it includes", Area = true, Required = true, Value = type.Description, Bag = "st_" + type.ServiceTypeId, Help = "One bullet per line.", Attrs = new AttributeBag { ["maxlength"] = "400", ["id"] = Convert.ToString("st-desc-" + type.ServiceTypeId) } })
+      <div class="d-flex gap-3" style="margin-top:18px;justify-content:flex-end">
+        <button type="button" class="m-btn m-btn-outline" data-ms-close>Cancel</button>
+        <button type="submit" class="m-btn m-btn-primary">Save the package</button>
+      </div>
+    </form>
+  </div>
+</text>
+}
+
+}

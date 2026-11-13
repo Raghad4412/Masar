@@ -1,0 +1,123 @@
+@model Masar.ViewModels.Client.BookingsIndexViewModel
+@{
+    Layout = "~/Views/Shared/_App.cshtml";
+    ViewData["navItem"] = "bookings";
+    ViewData["title"] = "My Bookings - Masar";
+}
+@section Crumb {
+
+  <span>Home</span><i class="bi bi-chevron-right"></i><span class="cur">My Bookings</span>
+
+}
+
+<div class="wrap">
+  <div class="page-h">
+    <div><h1 class="m-h1">My Bookings</h1><p class="m-body">Every consultation and service in one place</p></div>
+    <a href="@(Routes.To("consultation"))" class="m-btn m-btn-primary"><i class="bi bi-plus-lg"></i> Book a consultation</a>
+  </div>
+  <div class="statrow">
+    <div class="stat"><span class="m-small">Upcoming</span><b>@(Model.Tiles.Upcoming)</b></div>
+    <div class="stat"><span class="m-small">In progress</span><b>@(Model.Tiles.Progress)</b></div>
+    <div class="stat"><span class="m-small">Completed</span><b>@(Model.Tiles.Completed)</b></div>
+    <div class="stat"><span class="m-small">Spent this year</span><b>@(Helpers.Sar(Model.Tiles.Spent, 0)) SAR</b></div>
+  </div>
+  <div class="card">
+    @{
+    var all = Model.Sessions.Count() + Model.Requests.Count();
+    var counts = new Dictionary<string, object?> { ["all"] = all, ["upcoming"] = Model.Sessions.Where(x => new[] { "Scheduled", "Held" }.Contains(x.SessionStatus)).Count(), ["progress"] = Model.Requests.Where(x => x.Status == "In Progress").Count(), ["completed"] = Model.Sessions.Where(x => x.SessionStatus == "Completed").Count() + Model.Requests.Where(x => x.Status == "Completed").Count(), ["cancelled"] = Model.Sessions.Where(x => x.SessionStatus == "Cancelled").Count() + Model.Requests.Where(x => x.Status == "Cancelled").Count() };
+    var labels = new Dictionary<string, object?> { ["all"] = "All", ["upcoming"] = "Upcoming", ["progress"] = "In progress", ["completed"] = "Completed", ["cancelled"] = "Cancelled" };
+}
+    <div class="tabsline">
+      @foreach (var (key, label) in labels.Pairs())
+{
+<text>
+        <a href="@(key == "all" ? Routes.To("bookings.index") : Routes.To("bookings.index", new { tab = key }))" class="@(Model.Tab == key ? "on" : "")">@(label) (@(counts[key]))</a>
+      </text>
+}
+      <span class="grow"></span>
+    </div>
+    <div class="md-table-scroll">
+    <table class="dt">
+      <tr><th>Reference</th><th>Expert</th><th>Type</th><th>Date</th><th>Status</th><th class="r">Amount</th><th></th></tr>
+      @if (Model.Rows.Any())
+{
+    foreach (var row in Model.Rows)
+    {
+<text>
+        <tr>
+          <td><b>@(row.Reference)</b></td>
+          <td>@if (Helpers.Truthy(row.Who))
+{
+<text><span class="cellx">@await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = row.Who, Box = "ava ava-sm", Fallback = "av av-sm" }) @(row.Who.FullName)</span></text>
+}
+else
+{
+<text><span class="m-small">Waiting for an expert</span></text>
+}</td>
+          <td>@(row.Subtitle)</td>
+          <td>@(row.Kind == "session" ? row.When.Format("j M Y") + " · " + row.Model.SlotLabel : "Due " + row.When.Format("j M Y"))</td>
+          <td>@await Html.PartialAsync("~/Views/Components/_Status.cshtml", new StatusModel { Kind = row.Status.Kind, Value = row.Status.Value })</td>
+          <td class="r">@(Helpers.NumberFormat(Convert.ToDouble((row.Amount ?? 0)), 2))</td>
+          <td class="r">
+            @if (row.Kind == "session")
+{
+<text>
+              @if (Helpers.Truthy(Model.Bookings.Joinable(row.Model)))
+{
+<text>
+                <a class="m-link" href="@(Routes.To("bookings.show", new { session = row.Model.ConsultationSessionId }))">Join session</a>
+              </text>
+}
+else if ((row.Model.SessionStatus == "Completed") && !Helpers.Truthy(row.Model.Review))
+{
+<text>
+                <a class="m-link" href="@(Routes.To("bookings.review", new { session = row.Model.ConsultationSessionId }))">Write a review</a>
+              </text>
+}
+else if (row.Model.LivePayment()?.HasInvoice())
+{
+<text>
+                <a class="m-link" href="@(Routes.To("invoices.print", new { payment = row.Model.LivePayment().PaymentId }))" target="_blank" rel="noopener">View invoice <i class="bi bi-box-arrow-up-right" style="font-size:10px"></i></a>
+              </text>
+}
+else
+{
+<text>
+                <a class="m-link" href="@(Routes.To("bookings.show", new { session = row.Model.ConsultationSessionId }))">Open</a>
+              </text>
+}
+            </text>
+}
+else
+{
+<text>
+              @if ((row.Model.Status == "Completed") && !Helpers.Truthy(row.Model.Review))
+{
+<text>
+                <a class="m-link" href="@(Routes.To("services.review", new { serviceRequest = row.Model.ServiceRequestId }))">Write a review</a>
+              </text>
+}
+else
+{
+<text>
+                <a class="m-link" href="@(Routes.To("services.show", new { serviceRequest = row.Model.ServiceRequestId }))">Open</a>
+              </text>
+}
+            </text>
+}
+          </td>
+        </tr>
+      </text>
+    }
+}
+else
+{
+<text>
+        <tr><td colspan="7"><p class="m-body" style="padding:22px 0">You have no bookings in this tab yet.</p></td></tr>
+      </text>
+}
+    </table>
+    </div>
+    @await Html.PartialAsync("~/Views/Components/_Pager.cshtml", new PagerModel { Pager = Model.Pager, Unit = "booking" })
+  </div>
+</div>

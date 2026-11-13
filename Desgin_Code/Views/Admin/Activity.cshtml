@@ -1,0 +1,105 @@
+@model Masar.ViewModels.Admin.ActivityViewModel
+@{
+    Layout = "~/Views/Shared/_Dash.cshtml";
+    ViewData["panel"] = "admin";
+    ViewData["dmeCaption"] = Model.DmeCaption;
+    ViewData["title"] = "Activity Log - Masar";
+    ViewData["dtitle"] = "Activity Log";
+    ViewData["dcrumb"] = "Activity Log";
+}
+@{
+    var filtered = (((Model.Kind != "") || (Model.Q != "")) || Helpers.Truthy(Model.Since)) || Helpers.Truthy(Model.Until);
+    var byDay = Model.Pager.Rows.GroupBy(e => e.At.ToDateString());
+}
+
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Find an event</h3>
+      <p class="m-small">@(Helpers.NumberFormat(Model.Total)) events in total,
+        built from payments, sessions, proposals, verification documents and reviews</p></div>
+    @if (Helpers.Truthy(filtered))
+{
+<text>
+      <div class="sp"><a class="m-btn m-btn-outline m-btn-sm" href="@(Routes.To("admin.activity"))"><i class="bi bi-x-lg"></i> Clear the filter</a></div>
+    </text>
+}
+  </div>
+  <div class="dcb p">
+    <div class="ms-kindrow">
+      <a href="@(Routes.To("admin.activity", Http.QueryExcept("kind", "page")))" class="ms-kind @(Model.Kind == "" ? "on" : "")">
+        <i class="bi bi-collection"></i> Everything <span class="n">@(Helpers.NumberFormat(Model.Total))</span></a>
+      @foreach (var (key, meta) in Model.Kinds.Pairs())
+{
+<text>
+        <a href="@(Routes.To("admin.activity", Helpers.Merge(Http.QueryExcept("page"), new Dictionary<string, object?> { ["kind"] = key })))"
+           class="ms-kind @(Model.Kind == key ? "on" : "")">
+          <i class="bi @(meta.Icon)"></i> @(meta.Label) <span class="n">@(Helpers.NumberFormat((Model.Counts.ContainsKey(key) ? Model.Counts[key] : 0)))</span></a>
+      </text>
+}
+    </div>
+    <form class="ms-filter" method="GET" action="@(Routes.To("admin.activity"))" style="margin-top:18px">
+      <input type="hidden" name="kind" value="@(Model.Kind)">
+      <div class="f grow">
+        <label class="m-label" for="ac-q">Search the text</label>
+        <div class="m-input"><input id="ac-q" name="q" type="search" maxlength="80" value="@(Model.Q)"
+               placeholder="A name, a reference or an amount"><i class="bi bi-search" style="color:#9BAFA6"></i></div>
+      </div>
+      <div class="f">
+        <label class="m-label" for="ac-since">From</label>
+        <div class="m-input"><input id="ac-since" name="since" type="date" value="@(Model.Since?.ToDateString())"></div>
+      </div>
+      <div class="f">
+        <label class="m-label" for="ac-until">To</label>
+        <div class="m-input"><input id="ac-until" name="until" type="date" value="@(Model.Until?.ToDateString())"></div>
+      </div>
+      <div class="acts">
+        <button type="submit" class="m-btn m-btn-primary"><i class="bi bi-funnel"></i> Filter</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">@(Model.Kind == "" ? "Everything that happened on Masar" : Model.Kinds[Model.Kind].Label)</h3>
+      <p class="m-small">Newest first@(Helpers.Truthy(filtered) ? ", " + Helpers.NumberFormat(Model.Matched) + " " + Helpers.Plural("event", Model.Matched) + " match this filter" : "")</p></div>
+    <div class="sp"><span class="m-chip">page @(Model.Pager.Page) of @(Model.Pager.Pages)</span></div></div>
+  <div class="dcb p">
+    @if (Model.Pager.Total == 0)
+{
+<text>
+      <div class="ms-empty"><span class="ic"><i class="bi bi-search"></i></span>
+        <b>Nothing matches this filter</b>
+        <p class="m-small">Widen the dates, clear the search text, or go back to Everything.</p></div>
+    </text>
+}
+else
+{
+<text>
+      @foreach (var (day, events) in byDay.Pairs())
+{
+<text>
+        @{
+    var date = Helpers.ParseDate(day);
+}
+        <div class="ms-daysep">
+          <span class="d">@(date.IsToday() ? "Today" : (date.IsYesterday() ? "Yesterday" : date.Format("l j F Y")))</span>
+          <span class="m-small">@(events.Count()) @(Helpers.Plural("event", events.Count()))</span>
+        </div>
+        <div class="feed">
+          @foreach (var @event in events)
+{
+<text>
+            <div class="fev"><span class="fd @(@event.Tone)"><i class="bi @(@event.Icon)"></i></span>
+              <div><p>@(@event.Text)</p>
+                <span class="ago">@(Model.Kinds[@event.Kind].Label ?? @event.Kind)
+                  &middot; @(@event.At.Format("H:i"))
+                  &middot; @(@event.At.DiffForHumans())</span></div></div>
+          </text>
+}
+        </div>
+      </text>
+}
+      @await Html.PartialAsync("~/Views/Components/_Pager.cshtml", new PagerModel { Pager = Model.Pager, Unit = "event" })
+    </text>
+}
+  </div>
+</div>

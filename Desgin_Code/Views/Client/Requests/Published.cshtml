@@ -1,0 +1,32 @@
+@model Masar.ViewModels.Client.RequestPublishedViewModel
+@{
+    Layout = "~/Views/Shared/_App.cshtml";
+    ViewData["navItem"] = "requests";
+    ViewData["pageClass"] = "center-page";
+    ViewData["title"] = "Your request is live - Masar";
+}
+<div class="statebox">
+  <div class="bigicon ok"><i class="bi bi-send-check"></i></div>
+  <h1 class="m-h1" style="margin-top:24px">Your request is live</h1>
+  <p class="m-body" style="margin-top:12px;max-width:470px">@(Model.Experts) verified @(Model.Request.FieldName()) @(Helpers.Plural("expert", Model.Experts)) can see it now.
+    The first proposals usually arrive within 9 hours.</p>
+  <div class="refbox">Request reference <b>@(Model.Request.RequestReference)</b></div>
+  <div class="card pad" style="width:620px;margin-top:26px;text-align:left">
+    <div class="d-flex align-items-center justify-content-between">
+      <h3 class="m-h3">@(Model.Request.Title)</h3>
+      @await Html.PartialAsync("~/Views/Components/_Status.cshtml", new StatusModel { Kind = "request", Value = Model.Request.Status })
+    </div>
+    <div class="conf-grid">
+      <div><span class="m-small">@(Model.Request.Type?.ServicePackge) service, budget range</span><b>@(Model.Request.BudgetDisplay)</b></div>
+      <div><span class="m-small">Deadline</span><b>@(Model.Request.Deadline.Format("j F Y"))</b></div>
+      <div><span class="m-small">Service type</span><b>@(Model.Request.FieldName())</b></div>
+      <div><span class="m-small">Proposals</span><b>@(Model.Request.Proposals.Count())</b></div>
+    </div>
+    <div class="conf-cta">
+      <a href="@(Routes.To("requests.edit", new { serviceRequest = Model.Request.ServiceRequestId }))" class="m-btn m-btn-outline">Edit the request</a>
+      <a href="@(Routes.To("requests.show", new { serviceRequest = Model.Request.ServiceRequestId }))" class="m-btn m-btn-primary">Go to my request</a>
+    </div>
+  </div>
+  <p class="m-small" style="margin-top:20px"><i class="bi bi-bell"></i> We will notify you in the platform
+    as soon as the first proposal arrives.</p>
+</div>

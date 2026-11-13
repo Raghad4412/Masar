@@ -1,0 +1,43 @@
+@{
+    var invoice = (InvoiceData)ViewData["invoice"]!;
+    var payment = (Payment)ViewData["payment"]!;
+    var client = (User)ViewData["client"]!;
+    var reference = (string)ViewData["reference"]!;
+    var description = (string)ViewData["description"]!;
+    var expertName = (string)ViewData["expertName"]!;
+    var serviceDate = (DateTime)ViewData["serviceDate"]!;
+}
+<div class="card inv">
+  <div class="inv-h">
+    <div class="m-logo"><img src="@(Routes.Asset("img/masar-mark.png"))" alt="Masar">
+      <span><span class="w">MASAR</span><span class="t">Your Business Partner</span></span></div>
+    <div class="inv-no"><span class="m-small">Tax invoice</span><b>@(invoice.Number)</b>
+      @await Html.PartialAsync("~/Views/Components/_Status.cshtml", new StatusModel { Kind = "payment", Value = payment.PaymentStatus })</div>
+  </div>
+  <div class="inv-parties">
+    <div><span class="m-small">Issued by</span><b>@(invoice.Issuer)</b>
+      <p class="m-small">Jubail Industrial City, Saudi Arabia<br>VAT @(invoice.VatNumber)<br>CR @(invoice.CrNumber)</p></div>
+    <div><span class="m-small">Billed to</span><b>@(client.FullName)</b>
+      <p class="m-small">@(client.City)<br>@(client.Email)<br>@(client.PhoneDisplay)</p></div>
+    <div><span class="m-small">Details</span>
+      <p class="m-small">Booking: @(reference)<br>Payment: @(payment.Reference)<br>Date: @(invoice.Date.Format("j M Y"))</p></div>
+  </div>
+  <div class="md-table-scroll">
+  <table class="inv-t">
+    <thead><tr><th>Description</th><th>Expert</th><th>Date</th><th class="r">Amount (SAR)</th></tr></thead>
+    <tr><td><b>@(description)</b><br><span class="m-small">@(payment.Session?.SessionTopic ?? payment.Request?.Title ?? "Three business ideas matched to your budget, interests and city")</span></td>
+      <td>@(expertName)</td><td>@(serviceDate.Format("j M Y"))</td><td class="r">@(Helpers.NumberFormat(invoice.Price, 2))</td></tr>
+    <tr><td>Platform commission (@(Helpers.ToInt32((Config.Masar.Commission * 100)))%)</td><td>Masar</td><td>@(invoice.Date.Format("j M Y"))</td><td class="r">@(Helpers.NumberFormat(invoice.Commission, 2))</td></tr>
+  </table>
+  </div>
+  <div class="inv-tot">
+    <div><span>Subtotal</span><span>@(Helpers.NumberFormat(invoice.Subtotal, 2))</span></div>
+    <div><span>VAT (@(Helpers.ToInt32((Config.Masar.Vat * 100)))%)</span><span>@(Helpers.NumberFormat(invoice.Vat, 2))</span></div>
+    <div class="grand"><span>Total paid</span><span>@(Helpers.NumberFormat(invoice.Total, 2)) SAR</span></div>
+    <p class="m-small">Paid with @(payment.PaymentMethod) on @(invoice.Date.Format("j F Y")) at @(invoice.Date.Format("H:i")).</p>
+  </div>
+  <div class="inv-f">
+    <span class="m-small">Expert payout after commission: @(Helpers.NumberFormat(invoice.Payout, 2)) SAR, @(payment.PaymentStatus == "Released" ? "released after the session was completed" : "released after the session is completed").</span>
+    <span class="m-small">Thank you for using Masar.</span>
+  </div>
+</div>

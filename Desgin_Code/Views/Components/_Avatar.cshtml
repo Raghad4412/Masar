@@ -1,0 +1,34 @@
+@model AvatarModel
+@{
+    var user = Model.User;
+    var photo = Model.Photo;
+    var name = Model.Name;
+    var box = Model.Box;
+    var fallback = Model.Fallback;
+    var alt = Model.Alt;
+}
+@{
+    var src = Helpers.Truthy(photo) ? Img.Url(photo) : (user?.Photo);
+    var initials = user?.Initials ?? Initials.Of(name);
+    var useBox = Helpers.Truthy(src) ? box : (Helpers.Or(fallback, box));
+}
+@if (Helpers.Truthy(src))
+{
+<text>
+  <span class="@(useBox)"><img src="@(src)" alt="@(alt)"></span>
+</text>
+}
+else if ((useBox.StartsWith("av ") || (useBox == "av")) || useBox.StartsWith("av-"))
+{
+<text>
+  
+  <span class="@(useBox)">@(initials)</span>
+</text>
+}
+else
+{
+<text>
+  
+  <span class="@(useBox)"><span class="ms-initials">@(initials)</span></span>
+</text>
+}

@@ -1,0 +1,92 @@
+@model Masar.ViewModels.Client.ServiceHubViewModel
+@{
+    Layout = "~/Views/Shared/_App.cshtml";
+    ViewData["navItem"] = "requests";
+    ViewData["title"] = "Services - Masar";
+}
+@section Crumb {
+
+  <span>Home</span><i class="bi bi-chevron-right"></i><span class="cur">Services</span>
+
+}
+
+<div class="wrap">
+  <div class="page-h">
+    <div><h1 class="m-h1">Services</h1>
+      <p class="m-body">Hand a whole piece of work to a verified specialist. Post one request with your
+        budget, your deadline and the package you want, then compare the proposals you receive.</p></div>
+    <a href="@(Routes.To("requests.create"))" class="m-btn m-btn-primary"><i class="bi bi-plus-lg"></i> Post a request</a>
+  </div>
+
+  <div class="svc-grid">
+    @{
+    var tones = new[] { "", "b", "c", "d", "c", "b" };
+    var i = 0;
+}
+    @foreach (var (field, card) in Model.Cards.Pairs())
+{
+<text>
+      @{
+    var tone = tones[i++ % tones.Count()];
+}
+      <article class="card svc @(tone)">
+        <div class="svc-top">
+          <span class="svc-ic"><i class="bi @(card.Icon)"></i></span>
+          <div><h4 class="m-h4">@(field)</h4>
+            <p class="m-small">@(card.Experts) @(Helpers.Plural("verified expert", card.Experts)) ready to bid</p></div>
+        </div>
+        <p class="m-body">@(card.Text)</p>
+        <div class="svc-pkgs">
+          @if (card.Packages.Any())
+{
+    foreach (var package in card.Packages)
+    {
+<text>
+            <div class="svc-pkg"><b>@(package.ServicePackge)</b>
+              <span class="p">from @(Helpers.Sar(package.MinPrice, 0)) SAR</span></div>
+          </text>
+    }
+}
+else
+{
+<text>
+            <div class="svc-pkg"><b>Packages are set by each expert</b><span class="p">in the proposal</span></div>
+          </text>
+}
+        </div>
+        <div class="svc-foot">
+          <span><span class="lbl">Lowest price in this field</span>
+            <b class="price">@if (Helpers.Truthy(card.From))
+{
+<text>@(Helpers.Sar(card.From, 0)) SAR </text>
+}
+else
+{
+<text> Open </text>
+}</b></span>
+          <a href="@(Routes.To("requests.create", new { field = field }))" class="m-btn m-btn-primary m-btn-sm">Post a request <i class="bi bi-arrow-right"></i></a>
+        </div>
+      </article>
+    </text>
+}
+  </div>
+
+  <div class="card pad svc-cta" style="margin-top:24px">
+    <span class="svc-ic d"><i class="bi bi-lightbulb"></i></span>
+    <div><h3 class="m-h3">Not sure what to build yet?</h3>
+      <p class="m-body" style="margin-top:8px">The Business Idea Package studies your budget, your interests
+        and your city, then hands you three ideas you can actually start.</p></div>
+    <a href="@(Routes.To("ideas.create"))" class="m-btn m-btn-primary">Get my idea &middot; @(Helpers.Sar(Model.IdeaPrice, 0)) SAR</a>
+  </div>
+
+  <div class="svc-how">
+    <div class="svc-step"><span class="n">1</span><div><b>Describe the work</b>
+      <p class="m-small">One request: the field, the package, your budget range and your deadline.</p></div></div>
+    <div class="svc-step"><span class="n">2</span><div><b>Compare the proposals</b>
+      <p class="m-small">Price, days and scope of work side by side, from verified experts only.</p></div></div>
+    <div class="svc-step"><span class="n">3</span><div><b>Pay into escrow</b>
+      <p class="m-small">Masar holds the money and shows the commission and the VAT before you pay.</p></div></div>
+    <div class="svc-step"><span class="n">4</span><div><b>Release on delivery</b>
+      <p class="m-small">You mark the work completed, and the expert is paid from what Masar holds.</p></div></div>
+  </div>
+</div>

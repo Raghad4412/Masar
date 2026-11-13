@@ -1,0 +1,177 @@
+@model Masar.ViewModels.Client.BookingShowViewModel
+@{
+    Layout = "~/Views/Shared/_App.cshtml";
+    ViewData["navItem"] = "bookings";
+    ViewData["title"] = Model.Session.Reference + " - Masar";
+}
+@section Crumb {
+
+  <span>Home</span><i class="bi bi-chevron-right"></i><a href="@(Routes.To("bookings.index"))">My Bookings</a><i class="bi bi-chevron-right"></i><span class="cur">@(Model.Session.Reference)</span>
+
+}
+
+<div class="wrap">
+  <div class="page-h">
+    <div><div class="d-flex align-items-center gap-3"><h1 class="m-h1">Consultation with @(Model.User.FullName)</h1>
+      @await Html.PartialAsync("~/Views/Components/_Status.cshtml", new StatusModel { Kind = "session", Value = Model.Session.SessionStatus })</div>
+      <p class="m-body">@(Model.Session.Reference)@if (Helpers.Truthy(Model.Payment))
+{
+<text> &middot; booked on @(Model.Payment.PaymentDate.Format("j M Y"))</text>
+}</p></div>
+    <div class="d-flex gap-3">
+      @if (Helpers.Truthy(Model.Payment) && Model.Payment.HasInvoice())
+{
+<text>
+        <a href="@(Routes.To("invoices.print", new { payment = Model.Payment.PaymentId }))" class="m-btn m-btn-outline" target="_blank" rel="noopener"><i class="bi bi-receipt"></i> Invoice</a>
+      </text>
+}
+      @if (Helpers.Truthy(Model.Joinable))
+{
+<text>
+        <a href="#messages" class="m-btn m-btn-primary"><i class="bi bi-camera-video"></i> Join the session</a>
+      </text>
+}
+else if ((Model.Session.SessionStatus == "Completed") && !Helpers.Truthy(Model.Review))
+{
+<text>
+        <a href="@(Routes.To("bookings.review", new { session = Model.Session.ConsultationSessionId }))" class="m-btn m-btn-primary"><i class="bi bi-star"></i> Write a review</a>
+      </text>
+}
+    </div>
+  </div>
+  <div class="bcols">
+    <section>
+      <div class="card pad">
+        <h3 class="m-h3">Session details</h3>
+        <div class="conf-grid" style="margin-top:18px">
+          <div><span class="m-small">Date and time</span><b>@(Model.Session.StartsAt().Format("l j M Y")) &middot; @(Model.Session.SlotLabel) - @(Helpers.Substr(Model.Session.TimeString("End_Time"), 0, 5))</b></div>
+          <div><span class="m-small">Type</span><b>@(Model.Type?.TypeName) &middot; @(Config.Masar.SessionMinutes) min</b></div>
+          <div><span class="m-small">Topic</span><b>@(Model.Session.SessionTopic)</b></div>
+          <div><span class="m-small">Price</span><b>@(Helpers.NumberFormat(Model.Total, 2)) SAR</b></div>
+        </div>
+        @if (Helpers.Truthy(Model.Files))
+{
+<text>
+          <div class="files" style="margin-top:20px">
+            @foreach (var file in Model.Files)
+{
+<text>
+              <a class="file" href="@(Routes.Asset(file.Path))"><i class="bi bi-paperclip"></i> @(file.Name) <span class="m-small">@(FileService.Size(file.Size))</span></a>
+            </text>
+}
+          </div>
+        </text>
+}
+      </div>
+
+      <div class="card pad" style="margin-top:22px" id="messages">
+        <div class="d-flex align-items-center justify-content-between">
+          <h3 class="m-h3">Messages</h3><span class="m-chip">Inside this booking</span>
+        </div>
+        <div class="chat">
+          @if (Model.Messages.Any())
+{
+    foreach (var message in Model.Messages)
+    {
+<text>
+            @{
+    var mine = message.SenderUserId == AuthUser?.UserId;
+}
+            <div class="msg @(Helpers.Truthy(mine) ? "me" : "them")">@if (!(Helpers.Truthy(mine)))
+{
+<text>@await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = message.Sender, Box = "ava ava-sm", Fallback = "av av-sm" })</text>
+}
+              <div><p>@(message.MessageText)</p>
+              <span class="t">@(Helpers.Truthy(mine) ? "You" : message.Sender.FirstName) &middot; @(message.SentDate.Format("j M, H:i"))</span></div></div>
+          </text>
+    }
+}
+else
+{
+<text>
+            <p class="m-small">No messages yet. Write the first one below.</p>
+          </text>
+}
+        </div>
+        <form class="chatbar" method="POST" action="@(Routes.To("bookings.message", new { session = Model.Session.ConsultationSessionId }))">
+          @Html.AntiForgeryToken()
+          <div class="m-input @Html.Raw((Errors.GetBag("default").Has("Message_Text") ? " err " : ""))">
+            <input name="Message_Text" type="text" required maxlength="2000" placeholder="Write a message…">
+          </div>
+          <button type="submit" class="m-btn m-btn-primary"><i class="bi bi-send"></i></button>
+        </form>
+        @if (Errors.GetBag("default").Has("Message_Text"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle"></i> @(Errors.GetBag("default").First("Message_Text"))</p></text>
+}
+      </div>
+    </section>
+
+    <aside>
+      @await Html.PartialAsync("~/Views/Partials/_MiniExpert.cshtml", null, new ViewDataDictionary(ViewData) { ["user"] = Model.User, ["expert"] = Model.Expert })
+      <div class="card pad" style="margin-top:18px">
+        <h4 class="m-h4">Status</h4>
+        <div class="vtl">
+          @foreach (var (i, step) in Model.Timeline.Pairs())
+{
+<text>
+            @{
+    var cls = Helpers.Truthy(step.Done) ? "done" : ((i > 0) && Helpers.Truthy(Model.Timeline[i - 1].Done) ? "live" : "");
+}
+            <div class="vt @(cls)"><span class="d">@if (Helpers.Truthy(step.Done))
+{
+<text><i class="bi bi-check-lg"></i></text>
+}
+else if (cls == "live")
+{
+<text><i class="bi bi-calendar-check"></i></text>
+}</span>
+              <div><b>@(step.Label)@if ((step.Label == "Paid") && Helpers.Truthy(Model.Payment))
+{
+<text> &middot; @(Helpers.NumberFormat(Convert.ToDouble(Model.Payment.Amount), 2)) SAR</text>
+}</b>
+                <p class="m-small">@(Helpers.Truthy(step.At) ? step.At.Format("j M Y, H:i") : "Summary and review")</p></div></div>
+          </text>
+}
+        </div>
+      </div>
+      @if (Helpers.Truthy(Model.CanCancel))
+{
+<text>
+        <div class="card pad" style="margin-top:18px">
+          <h4 class="m-h4">Need a change?</h4>
+          
+          <a class="m-link" href="@(Routes.To("bookings.choose", new { expert = Model.Expert.ExpertId }))" style="margin-top:12px"><i class="bi bi-arrow-repeat"></i> Reschedule the session</a><br>
+          <a class="m-link" href="#" data-ms-open="ms-cancel" style="margin-top:10px"><i class="bi bi-x-circle"></i> Cancel the booking</a>
+          <p class="m-small" style="margin-top:12px">@(Helpers.Truthy(Model.CancelIsFree) ? "Free until " + Model.FreeUntil.Format("l j F, H:i") + "." : Helpers.ToInt32((Config.Masar.LateCancelRefund * 100)) + "% of the price is kept from now on.")</p>
+        </div>
+      </text>
+}
+    </aside>
+  </div>
+</div>
+
+@section Dialogs {
+
+@if (Helpers.Truthy(Model.CanCancel))
+{
+<text>
+  <div class="ms-dialog" id="ms-cancel" hidden>
+    <form class="card pad" style="width:520px" method="POST" action="@(Routes.To("bookings.cancel", new { session = Model.Session.ConsultationSessionId }))">
+      @Html.AntiForgeryToken()
+      <h3 class="m-h3">Cancel this booking?</h3>
+      <p class="m-body" style="margin-top:10px">@(Helpers.Truthy(Model.CancelIsFree) ? "You cancel more than " + Config.Masar.FreeCancelHours + " hours before the session, so you receive a full refund." : Helpers.ToInt32((Config.Masar.LateCancelRefund * 100)) + "% of the price is kept because the session starts in less than " + Config.Masar.FreeCancelHours + " hours.")</p>
+      <div class="m-fg" style="margin-top:18px">
+        <label class="m-label" for="reason">Reason <span class="opt">Optional</span></label>
+        <div class="m-input area"><textarea id="reason" name="reason" maxlength="300" placeholder="Tell the expert why, if you like."></textarea></div>
+      </div>
+      <div class="d-flex gap-3" style="margin-top:20px;justify-content:flex-end">
+        <button type="button" class="m-btn m-btn-outline" data-ms-close>Keep the booking</button>
+        <button type="submit" class="m-btn m-btn-primary">Cancel the booking</button>
+      </div>
+    </form>
+  </div>
+</text>
+}
+
+}

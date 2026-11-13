@@ -1,0 +1,48 @@
+@model ExpertCardModel
+@{
+    var expert = Model.Expert;
+    var stats = Model.Stats;
+    var topRated = Model.TopRated;
+}
+@{
+    var s = Helpers.Or(stats, Service<StatsService>());
+    var u = expert.User;
+    var reviews = s.ExpertReviewCount(expert);
+    var bookings = s.ExpertCompletedCount(expert);
+    var slot = s.NextFreeSlot(expert);
+}
+<div class="ecard">
+  <div class="ec-top">
+    <span class="ec-pic">@await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = u, Box = "ava ava-lg", Fallback = "av av-lg" })<i class="bi bi-patch-check-fill badge-v"></i></span>
+    <div class="ec-id">
+      <h4 class="m-h4">@(u.FullName)</h4>
+      <p class="m-small">@(expert.Specialization)</p>
+      <p class="m-small"><i class="bi bi-geo-alt"></i> @(u.City)</p>
+    </div>
+  </div>
+  <div class="ec-rate">@if (Helpers.Truthy(expert.Rating))
+{
+<text>@await Html.PartialAsync("~/Views/Components/_Stars.cshtml", new StarsModel { Rating = expert.Rating }) <b>@(Helpers.NumberFormat(Convert.ToDouble(expert.Rating), 1))</b> <span class="m-small">(@(reviews))</span></text>
+}
+else
+{
+<text><span class="m-small">No reviews yet</span></text>
+}@if (topRated)
+{
+<text><span class="m-chip chip-gold"><i class="bi bi-trophy-fill"></i> Top rated</span></text>
+}
+else
+{
+<text><span class="m-chip chip-ok"><i class="bi bi-patch-check-fill"></i> Verified</span></text>
+}</div>
+  <div class="ec-meta">
+    <span><i class="bi bi-award"></i> @(expert.ExperienceYears) years</span>
+    <span><i class="bi bi-check2-circle"></i> @(bookings) bookings</span>
+    <span><i class="bi bi-translate"></i> AR / EN</span>
+  </div>
+  <div class="ec-slot"><i class="bi bi-calendar-check"></i> Next free slot &middot; @(Helpers.Truthy(slot) ? slot.StartsAt().Format("D j M") + " · " + slot.SlotLabel : "Ask for a time")</div>
+  <div class="ec-foot">
+    <span class="ec-price"><span class="lbl">Price</span><b class="price">@(Helpers.Sar(expert.SessionPrice, 0)) SAR</b><span class="m-small">/ session</span></span>
+    <a href="@(Routes.To("experts.show", new { expert = expert.ExpertId }))" class="m-btn m-btn-primary m-btn-sm">View profile</a>
+  </div>
+</div>

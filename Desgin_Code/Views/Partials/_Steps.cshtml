@@ -1,0 +1,24 @@
+@{
+    var step = (int)ViewData["step"]!;
+}
+<div class="steps"><div class="wrap"><div class="steps-in">
+  <div class="stp on"><span class="d">@if (step > 1)
+{
+<text><i class="bi bi-check-lg"></i></text>
+}
+else
+{
+<text> 1 </text>
+}</span> Date and time</div>
+  <span class="ln @(step > 1 ? "on" : "")"></span>
+  <div class="stp @(step >= 2 ? "on" : "")"><span class="d">@if (step > 2)
+{
+<text><i class="bi bi-check-lg"></i></text>
+}
+else
+{
+<text> 2 </text>
+}</span> Booking summary</div>
+  <span class="ln @(step > 2 ? "on" : "")"></span>
+  <div class="stp @(step >= 3 ? "on" : "")"><span class="d">3</span> Payment</div>
+</div></div></div>

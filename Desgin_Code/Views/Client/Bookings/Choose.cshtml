@@ -1,0 +1,233 @@
+@model Masar.ViewModels.Client.ChooseViewModel
+@{
+    Layout = "~/Views/Shared/_App.cshtml";
+    ViewData["navItem"] = "bookings";
+    ViewData["title"] = "Choose a time with " + Model.User.FullName + " - Masar";
+}
+@{
+    Func<ConsultationSession, bool> isFree = slot => slot.SessionStatus == "Available" && Model.SlotService.StartsLateEnough(slot);
+    var freeByDay = Model.Week.ToDictionary(d => d.Key, d => d.Value.Slots.Where(isFree).ToList());
+    var asked = Http.QueryOrNull("day");
+    var dayKey = asked != null && Model.Week.ContainsKey(asked) ? asked : null;
+    if (dayKey == null && Model.Selected != null)
+    {
+        var k = Model.Selected.StartsAt().ToDateString();
+        dayKey = Model.Week.ContainsKey(k) ? k : null;
+    }
+    dayKey ??= freeByDay.Where(d => d.Value.Any()).Select(d => d.Key).FirstOrDefault() ?? Model.Week.Keys.FirstOrDefault();
+    var day = Model.Week[dayKey!];
+    var slots = freeByDay.GetValueOrDefault(dayKey!) ?? new List<ConsultationSession>();
+    var parts = new Dictionary<string, DayPart>
+    {
+        ["Morning"] = new DayPart { Icon = "bi-sunrise" },
+        ["Afternoon"] = new DayPart { Icon = "bi-sun" },
+        ["Evening"] = new DayPart { Icon = "bi-sunset" },
+    };
+    foreach (var slot in slots)
+    {
+        var hour = int.Parse(slot.SlotLabel.Substring(0, 2));
+        var name = hour < 12 ? "Morning" : (hour < 17 ? "Afternoon" : "Evening");
+        parts[name].Slots.Add(slot);
+    }
+    parts = parts.Where(p => p.Value.Slots.Any()).ToDictionary(p => p.Key, p => p.Value);
+    var weekFree = freeByDay.Values.Sum(s => s.Count);
+    var keep = new Dictionary<string, string> { ["week"] = Model.From.ToDateString() };
+}
+
+@section Crumb {
+
+  <span>Home</span><i class="bi bi-chevron-right"></i><a href="@(Routes.To("experts.index"))">Find an Expert</a><i class="bi bi-chevron-right"></i><a href="@(Routes.To("experts.show", new { expert = Model.Expert.ExpertId }))">@(Model.User.FullName)</a><i class="bi bi-chevron-right"></i><span class="cur">Book</span>
+
+}
+
+@section Prepage {
+
+@await Html.PartialAsync("~/Views/Partials/_Steps.cshtml", null, new ViewDataDictionary(ViewData) { ["step"] = 1 })
+
+}
+
+<div class="wrap">
+  <div class="bk">
+
+    
+    <div class="bk-top">
+      @await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = Model.User, Box = "ava ava-lg", Fallback = "av av-lg" })
+      <div class="who">
+        <div class="m-h3">@(Model.User.FullName)
+          @if (Model.Expert.IsVerified())
+{
+<text><i class="bi bi-patch-check-fill" style="color:#E0A63C;font-size:15px"></i></text>
+}
+        </div>
+        <p class="m-small">@(Model.Expert.Title) &middot; @(Model.User.City)
+          @if (Helpers.Truthy(Model.Expert.Rating))
+{
+<text>&middot; @(Helpers.NumberFormat(Convert.ToDouble(Model.Expert.Rating), 1)) <i class="bi bi-star-fill" style="color:#E0A63C;font-size:11px"></i>
+            (@(Model.Reviews) @(Helpers.Plural("review", Model.Reviews)))</text>
+}</p>
+      </div>
+      <div class="facts">
+        <div><span class="k">Consultation</span><b>@(Model.TypeName ?? Model.Expert.ConsultationTypeName())</b></div>
+        <div><span class="k">Length</span><b>@(Config.Masar.SessionMinutes) minutes</b></div>
+        <div><span class="k">Price</span><b>@(Helpers.Sar(Model.Expert.SessionPrice, 0)) SAR</b></div>
+      </div>
+    </div>
+
+    <p class="bk-note"><i class="bi bi-camera-video"></i>
+      A video call inside Masar, with a written summary afterwards and seven days of chat.
+      Times are Riyadh time (GMT+3).@if (Helpers.Truthy(Model.ReplyHours))
+{
+<text> @(Model.User.FirstName) replies within @(Model.ReplyHours) @(Helpers.Plural("hour", Model.ReplyHours)).</text>
+}</p>
+
+    
+    <section class="bk-stage">
+      <div class="bk-stage-h">
+        <span class="n">1</span>
+        <div><h3 class="m-h3">Which day suits you?</h3>
+          <p class="m-small">@(weekFree) free @(Helpers.Plural("time", weekFree)) this week</p></div>
+        <div class="nav">
+          <a class="navbtn" href="@(Routes.To("bookings.choose", new { expert = Model.Expert.ExpertId, week = Model.PrevWeek.ToDateString() }))"
+             aria-label="The week before"><i class="bi bi-chevron-left"></i></a>
+          <b>@(Model.From.Format("j")) - @(Model.From.AddDays(6).Format("j M Y"))</b>
+          <a class="navbtn" href="@(Routes.To("bookings.choose", new { expert = Model.Expert.ExpertId, week = Model.NextWeek.ToDateString() }))"
+             aria-label="The week after"><i class="bi bi-chevron-right"></i></a>
+        </div>
+      </div>
+
+      <div class="bk-days">
+        @foreach (var (key, d) in Model.Week.Pairs())
+{
+<text>
+          @{
+    var n = ((freeByDay.ContainsKey(key) ? freeByDay[key] : new())).Count();
+}
+          @if (Helpers.Truthy(n))
+{
+<text>
+            <a class="bk-day @(key == dayKey ? "on" : "")"
+               href="@(Routes.To("bookings.choose", new { expert = Model.Expert.ExpertId, week = keep["week"], day = key }))">
+              <span class="w">@(d.Date.Format("D"))</span>
+              <span class="d">@(d.Date.Format("j"))</span>
+              <span class="mo">@(d.Date.Format("M"))</span>
+              <span class="free">@(n) free</span>
+              @if (d.Date.IsToday())
+{
+<text><span class="today">Today</span></text>
+}
+            </a>
+          </text>
+}
+else
+{
+<text>
+            <span class="bk-day full" aria-disabled="true">
+              <span class="w">@(d.Date.Format("D"))</span>
+              <span class="d">@(d.Date.Format("j"))</span>
+              <span class="mo">@(d.Date.Format("M"))</span>
+              <span class="free">full</span>
+            </span>
+          </text>
+}
+        </text>
+}
+      </div>
+    </section>
+
+    
+    <section class="bk-stage">
+      <div class="bk-stage-h">
+        <span class="n">2</span>
+        <div><h3 class="m-h3">Pick a time on @(day.Date.Format("l j F"))</h3>
+          <p class="m-small">@(slots.Count()) free @(Helpers.Plural("time", slots.Count())) on this day</p></div>
+      </div>
+
+      @if (Errors.Has("Consultation_Session_ID"))
+{
+<text>
+        <p class="m-err" style="margin:0 0 14px"><i class="bi bi-exclamation-circle"></i> @(Errors.First("Consultation_Session_ID"))</p>
+      </text>
+}
+
+      @if (!slots.Any())
+{
+<text>
+        <div class="ms-empty"><span class="ic"><i class="bi bi-calendar-x"></i></span>
+          <b>Nothing free on this day</b>
+          <p class="m-small">Choose another day above, or look at the week before or after.</p></div>
+      </text>
+}
+else
+{
+<text>
+        @foreach (var (name, part) in parts.Pairs())
+{
+<text>
+          <div class="bk-part"><i class="bi @(part.Icon)"></i> @(name)
+            <span>@(part.Slots.Count()) @(Helpers.Plural("time", part.Slots.Count()))</span></div>
+          <div class="bk-slots">
+            @foreach (var slot in part.Slots)
+{
+<text>
+              @{
+    var isOn = Helpers.Truthy(Model.Selected) && (Helpers.ToInt32(Model.Selected.ConsultationSessionId) == Helpers.ToInt32(slot.ConsultationSessionId));
+}
+              <a class="bk-slot @(Helpers.Truthy(isOn) ? "on" : "")"
+                 href="@(Routes.To("bookings.choose", new { expert = Model.Expert.ExpertId, week = keep["week"], day = dayKey, slot = slot.ConsultationSessionId }))#bk-bar"
+                 aria-pressed="@(Helpers.Truthy(isOn) ? "true" : "false")">
+                <span class="tick"><i class="bi bi-check-lg"></i></span>
+                <span class="t">@(slot.SlotLabel) - @(Helpers.Substr(slot.TimeString("End_Time"), 0, 5))</span>
+                <span class="m">@(Config.Masar.SessionMinutes) min</span>
+                <span class="go">@(Helpers.Truthy(isOn) ? "Chosen" : "Choose")</span>
+              </a>
+            </text>
+}
+          </div>
+        </text>
+}
+      </text>
+}
+    </section>
+  </div>
+</div>
+
+<div class="bk-bar @(Helpers.Truthy(Model.Selected) ? "ready" : "")" id="bk-bar">
+  <div class="in">
+    <div class="sum">
+      @if (Helpers.Truthy(Model.Selected))
+{
+<text>
+        <span class="ic"><i class="bi bi-calendar-check"></i></span>
+        <div><b>@(Model.Selected.StartsAt().Format("l j F")), @(Model.Selected.SlotLabel) - @(Helpers.Substr(Model.Selected.TimeString("End_Time"), 0, 5))</b>
+          <span class="m-small">@(Model.Expert.ConsultationTypeName()) with @(Model.User.FirstName) &middot; held for @(Config.Masar.HoldMinutes) minutes once you continue</span></div>
+      </text>
+}
+else
+{
+<text>
+        <span class="ic wait"><i class="bi bi-clock"></i></span>
+        <div><b>No time chosen yet</b>
+          <span class="m-small">Pick a day, then a time, and the price appears here.</span></div>
+      </text>
+}
+    </div>
+    <div class="pay">
+      <div class="price"><span class="k">Session price</span>
+        <b>@(Helpers.NumberFormat(Convert.ToDouble(Model.Expert.SessionPrice), 2)) <em>SAR</em></b></div>
+      @if (Helpers.Truthy(Model.Selected))
+{
+<text>
+        <form method="POST" action="@(Routes.To("bookings.hold", new { session = Model.Selected.ConsultationSessionId }))">@Html.AntiForgeryToken()
+          <button type="submit" class="m-btn m-btn-primary">Continue <i class="bi bi-arrow-right"></i></button>
+        </form>
+      </text>
+}
+else
+{
+<text>
+        <button type="button" class="m-btn m-btn-primary" disabled>Continue <i class="bi bi-arrow-right"></i></button>
+      </text>
+}
+    </div>
+  </div>
+</div>

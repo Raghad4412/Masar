@@ -1,0 +1,83 @@
+@model Masar.ViewModels.Client.BookingSummaryViewModel
+@{
+    Layout = "~/Views/Shared/_App.cshtml";
+    ViewData["navItem"] = "bookings";
+    ViewData["title"] = "Booking summary - Masar";
+}
+@section Crumb {
+
+  <span>Home</span><i class="bi bi-chevron-right"></i><a href="@(Routes.To("experts.index"))">Find an Expert</a><i class="bi bi-chevron-right"></i><a href="@(Routes.To("experts.show", new { expert = Model.Expert.ExpertId }))">@(Model.User.FullName)</a><i class="bi bi-chevron-right"></i><span class="cur">Book</span>
+
+}
+
+@section Prepage {
+
+@await Html.PartialAsync("~/Views/Partials/_Steps.cshtml", null, new ViewDataDictionary(ViewData) { ["step"] = 2 })
+
+}
+
+<form method="POST" action="@(Routes.To("bookings.confirm", new { session = Model.Session.ConsultationSessionId }))" enctype="multipart/form-data">
+  @Html.AntiForgeryToken()
+  <div class="wrap">
+    <div class="bcols">
+      <section>
+        <div class="card pad">
+          <h2 class="m-h2" style="font-size:26px">Booking summary</h2>
+          <div class="sumline"><i class="bi bi-person-badge"></i><div><b>@(Model.User.FullName)</b><p class="m-small">@(Model.Expert.Title) &middot; @(Model.User.City)</p></div></div>
+          <div class="sumline"><i class="bi bi-chat-quote"></i><div><b>@(Model.Type?.TypeName) &middot; @(Config.Masar.SessionMinutes) minutes</b><p class="m-small">Video call inside Masar, with a written summary</p></div></div>
+          <div class="sumline"><i class="bi bi-calendar-check"></i><div><b>@(Model.Session.StartsAt().Format("l j F Y")) &middot; @(Model.Session.SlotLabel) - @(Helpers.Substr(Model.Session.TimeString("End_Time"), 0, 5))</b><p class="m-small">Riyadh time (GMT+3)</p></div>
+            <a class="m-link" href="@(Routes.To("bookings.choose", new { expert = Model.Expert.ExpertId }))">Change</a></div>
+        </div>
+
+        <div class="card pad" style="margin-top:22px">
+          <h3 class="m-h3">Tell @(Model.User.FirstName) about your session</h3>
+          <div class="m-fg" style="margin-top:18px">
+            <label class="m-label" for="Session_Topic">Topic of the session <span class="req">Required</span></label>
+            <div class="m-input @Html.Raw((Errors.GetBag("default").Has("Session_Topic") ? " err " : ""))">
+              <input id="Session_Topic" name="Session_Topic" type="text" required minlength="10" maxlength="200"
+                     placeholder="Write what you want to discuss…"
+                     value="@(Old("Session_Topic", Model.Session.SessionTopic == "Topic to be confirmed" ? "" : Model.Session.SessionTopic))">
+            </div>
+            @if (Errors.GetBag("default").Has("Session_Topic"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle"></i> @(Errors.GetBag("default").First("Session_Topic"))</p></text>
+}
+          </div>
+          <div class="m-fg">
+            <label class="m-label" for="notes">Notes and files for the expert <span class="opt">Optional</span></label>
+            <div class="m-input area @Html.Raw((Errors.GetBag("default").Has("notes") ? " err " : ""))">
+              <textarea id="notes" name="notes" maxlength="1000"
+                        placeholder="Anything the expert should read before the call.">@(Old("notes"))</textarea>
+            </div>
+            @if (Errors.GetBag("default").Has("notes"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle"></i> @(Errors.GetBag("default").First("notes"))</p></text>
+}
+            <label class="ms-drop" style="display:block;margin-top:12px">
+              <input class="ms-file" type="file" name="files[]" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.zip">
+              <span class="m-link"><i class="bi bi-paperclip"></i> Attach files</span>
+            </label>
+            <div class="files" data-ms-files="files[]"></div>
+            @if (Errors.GetBag("default").Has("files.*"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle"></i> @(Errors.GetBag("default").First("files.*"))</p></text>
+}
+          </div>
+        </div>
+      </section>
+
+      <aside>
+        <div class="card pad">
+          <h4 class="m-h4">Price summary</h4>
+          @await Html.PartialAsync("~/Views/Partials/_PriceSummary.cshtml", null, new ViewDataDictionary(ViewData) { ["line"] = (Model.Type?.TypeName) + " · " + Config.Masar.SessionMinutes + " minutes", ["price"] = Model.Price, ["commission"] = Model.Commission, ["vat"] = Model.Vat, ["total"] = Model.Total })
+          <button type="submit" class="m-btn m-btn-primary m-btn-block" style="margin-top:20px">Continue to payment</button><p class="m-small" style="text-align:center;margin-top:12px">You are not charged yet.</p>
+        </div>
+        <div class="card pad" style="margin-top:18px">
+          <h4 class="m-h4">Cancellation</h4>
+          <p class="m-small" style="margin-top:8px">Free cancellation until @(Model.FreeUntil.Format("l j F, H:i")).
+            After that, @(Helpers.ToInt32((Config.Masar.LateCancelRefund * 100)))% of the price is kept.</p>
+        </div>
+      </aside>
+    </div>
+  </div>
+</form>

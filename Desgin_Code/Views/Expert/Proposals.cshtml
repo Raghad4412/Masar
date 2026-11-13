@@ -1,0 +1,78 @@
+@model Masar.ViewModels.ExpertArea.ExpertProposalsViewModel
+@{
+    Layout = "~/Views/Shared/_Dash.cshtml";
+    ViewData["panel"] = "expert";
+    ViewData["dmeCaption"] = Model.DmeCaption;
+    ViewData["mainClass"] = "page";
+    ViewData["title"] = "My Proposals - Masar";
+    ViewData["dtitle"] = "My Proposals";
+    ViewData["dcrumb"] = "My Proposals";
+}
+<div class="wrap">
+  <div class="page-h">
+    <div><h1 class="m-h1">Everything you sent</h1><p class="m-body">Where every proposal stands right now</p></div>
+    <a href="@(Routes.To("expert.requests"))" class="m-btn m-btn-primary"><i class="bi bi-search"></i> Find open requests</a>
+  </div>
+  <div class="statrow">
+    <div class="stat"><span class="m-small">Sent in total</span><b>@(Model.Counts.All)</b></div>
+    <div class="stat"><span class="m-small">Accepted</span><b>@(Model.Counts.Accepted)</b></div>
+    <div class="stat"><span class="m-small">Waiting</span><b>@(Model.Counts.Waiting)</b></div>
+    <div class="stat"><span class="m-small">Billed this month</span><b>@(Helpers.Sar(Model.Billed, 0)) SAR</b></div>
+  </div>
+  <div class="card">
+    <div class="tabsline">
+      @foreach (var (key, label) in new Dictionary<string, object?> { ["all"] = "All", ["waiting"] = "Waiting", ["accepted"] = "Accepted", ["rejected"] = "Rejected" }.Pairs())
+{
+<text>
+        <a href="@(key == "all" ? Routes.To("expert.proposals") : Routes.To("expert.proposals", new { tab = key }))" class="@(Model.Tab == key ? "on" : "")">@(label) (@(Model.Counts[key]))</a>
+      </text>
+}
+      <span class="grow"></span>
+    </div>
+    <div class="md-table-scroll">
+    <table class="dt">
+      <tr><th>Request</th><th>Client</th><th class="r">My price</th><th>Delivery</th><th>Status</th><th></th></tr>
+      @if (Model.Rows.Any())
+{
+    foreach (var row in Model.Rows)
+    {
+<text>
+        <tr>
+          <td><b>@(row.Request?.Title)</b><br><span class="m-small">@(row.Request?.RequestReference)</span></td>
+          <td>@(row.Request?.Client?.User?.FullName)</td><td class="r"><b>@(Helpers.Sar(row.ProposalPrice, 0)) SAR</b></td><td>@(row.DeliveryTime) days</td>
+          <td>@await Html.PartialAsync("~/Views/Components/_Status.cshtml", new StatusModel { Kind = "proposal", Value = row.ProposalStatus })</td>
+          <td class="r">
+            @if (row.ProposalStatus == "Accepted")
+{
+<text>
+              <a class="m-link" href="@(Routes.To("expert.service.show", new { serviceRequest = row.ServiceRequestId }))">Open the service</a>
+            </text>
+}
+else if (row.ProposalStatus == "Waiting")
+{
+<text>
+              <a class="m-link" href="@(Routes.To("expert.proposal.create", new { serviceRequest = row.ServiceRequestId, edit = 1 }))">Edit</a>
+            </text>
+}
+else
+{
+<text>
+              <a class="m-link" href="@(Routes.To("expert.proposal.create", new { serviceRequest = row.ServiceRequestId }))">View</a>
+            </text>
+}
+          </td>
+        </tr>
+      </text>
+    }
+}
+else
+{
+<text>
+        <tr><td colspan="6"><p class="m-body" style="padding:22px 0">You have no proposals in this tab yet.</p></td></tr>
+      </text>
+}
+    </table>
+    </div>
+    @await Html.PartialAsync("~/Views/Components/_Pager.cshtml", new PagerModel { Pager = Model.Pager, Unit = "proposal" })
+  </div>
+</div>

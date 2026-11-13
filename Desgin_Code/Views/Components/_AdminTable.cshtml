@@ -1,0 +1,51 @@
+@model AdminTableModel
+@{
+    var title = Model.Title;
+    var note = Model.Note;
+    var tabs = Model.Tabs;
+    var head = Model.Head;
+    var pager = Model.Pager;
+    var unit = Model.Unit;
+    var slot = Model.Slot;
+    var action = Model.Action;
+    var filter = Model.Filter;
+}
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">@(title)</h3><p class="m-small">@(note)</p></div>@if (action != null)
+{
+<text><div class="sp">@(action)</div></text>
+}</div>
+  <div class="dcb t">
+    @if (Helpers.Truthy(tabs))
+{
+<text>
+      <div class="tabsline">
+        @foreach (var tab in tabs)
+{
+<text>
+          <a href="@(tab.Url)" class="@(Helpers.Truthy(tab.On) ? "on" : "")">@(tab.Label) (@(tab.Count))</a>
+        </text>
+}
+        <span class="grow"></span>
+        @if (filter != null)
+{
+<text>@(filter)</text>
+}
+      </div>
+    </text>
+}
+    <div class="md-table-scroll"><table class="dt2">
+      <tr>@foreach (var cell in head)
+{
+<text><th @Html.Raw((Helpers.Truthy(cell.Right) ? " class=\"r\" " : ""))>@(cell.Label)</th></text>
+}</tr>
+      @(slot)
+    </table></div>
+    @if (Helpers.Truthy(pager))
+{
+<text>
+      @await Html.PartialAsync("~/Views/Components/_Pager.cshtml", new PagerModel { Pager = pager, Unit = unit })
+    </text>
+}
+  </div>
+</div>

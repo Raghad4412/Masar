@@ -1,0 +1,65 @@
+@model Masar.ViewModels.Client.IdeasIndexViewModel
+@{
+    Layout = "~/Views/Shared/_App.cshtml";
+    ViewData["navItem"] = "bookings";
+    ViewData["title"] = "Business ideas - Masar";
+}
+@section Crumb {
+
+  <span>Home</span><i class="bi bi-chevron-right"></i><span class="cur">Business ideas</span>
+
+}
+
+<div class="wrap">
+  <div class="page-h">
+    <div><h1 class="m-h1">Business ideas</h1><p class="m-body">You bring the capital, we bring the idea</p></div>
+    <a href="@(Routes.To("ideas.create"))" class="m-btn m-btn-primary"><i class="bi bi-lightbulb"></i> Get my idea · @(Helpers.Sar(Model.Price, 0)) SAR</a>
+  </div>
+  @if (!Model.Ideas.Any())
+{
+<text>
+    <div class="empty">
+      @await Html.PartialAsync("~/Views/Svg/_EmptySearch.cshtml")
+      <h3 class="m-h3" style="margin-top:22px">You have not asked for a Business Idea Package yet</h3>
+      <p class="m-body" style="max-width:470px;margin:10px auto 0">Tell us your budget, your interests and your
+        city, and within three working days you receive three business ideas that fit all three, each with an
+        estimated start-up cost.</p>
+      <div class="d-flex gap-3" style="justify-content:center;margin-top:26px">
+        <a href="@(Routes.To("ideas.create"))" class="m-btn m-btn-primary">Get my business idea · @(Helpers.NumberFormat(Model.Total, 2)) SAR</a>
+      </div>
+    </div>
+  </text>
+}
+else
+{
+<text>
+    @foreach (var (key, rows) in Model.Packages.Pairs())
+{
+<text>
+      @{
+    var lead = rows.FirstOrDefault();
+}
+      <div class="card pad" style="margin-bottom:18px">
+        <div class="d-flex align-items-center justify-content-between">
+          <div><h3 class="m-h3">@(key == "open" ? "Package in preparation" : "Package of " + lead.ExpirationDate.SubDays(Config.Masar.IdeaValidityDays).Format("j F Y"))</h3>
+            <p class="m-small" style="margin-top:4px">@(rows.Count()) @(Helpers.Plural("idea", rows.Count()))@if (key != "open")
+{
+<text> &middot; valid until @(lead.ExpirationDate.Format("j M Y"))</text>
+}</p></div>
+          @await Html.PartialAsync("~/Views/Components/_Status.cshtml", new StatusModel { Kind = "idea", Value = rows.FirstOrDefault(x => x.Status == "Chosen")?.Status ?? lead.Status })
+        </div>
+        <div class="statrow" style="margin-top:16px">
+          @foreach (var row in rows)
+{
+<text>
+            <div class="stat"><span class="m-small">@(row.IdeaName)</span><b>@(row.EstimatedCost() > 0 ? Helpers.Sar(row.EstimatedCost(), 0) + " SAR" : "-")</b></div>
+          </text>
+}
+        </div>
+        <a href="@(Routes.To("ideas.show", new { idea = lead.BusinessIdeaId }))" class="m-btn m-btn-outline" style="margin-top:16px">Open the package</a>
+      </div>
+    </text>
+}
+  </text>
+}
+</div>

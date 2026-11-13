@@ -1,0 +1,165 @@
+@model Masar.ViewModels.ExpertArea.ScheduleViewModel
+@{
+    Layout = "~/Views/Shared/_Dash.cshtml";
+    ViewData["panel"] = "expert";
+    ViewData["dmeCaption"] = Model.DmeCaption;
+    ViewData["title"] = "My Schedule - Masar";
+    ViewData["dtitle"] = "Bookings";
+    ViewData["dcrumb"] = "My Schedule";
+}
+<div class="ms-stat-row">
+  <div class="ms-stat">
+    <span class="ic"><i class="bi bi-clock-history"></i></span>
+    <div><span class="k">Hours booked this week</span>
+      <div class="v">@(Model.HoursBooked) <small>h</small></div>
+      <span class="h">@(Model.CallsThisWeek) @(Helpers.Plural("call", Model.CallsThisWeek)) with your clients</span></div>
+  </div>
+  <div class="ms-stat blue">
+    <span class="ic"><i class="bi bi-calendar2-week"></i></span>
+    <div><span class="k">Free slots left</span>
+      <div class="v">@(Model.Free)</div>
+      <span class="h">Sunday to Thursday, 09:00 to 17:00</span></div>
+  </div>
+  <div class="ms-stat green">
+    <span class="ic"><i class="bi bi-camera-video"></i></span>
+    <div><span class="k">Client calls this month</span>
+      <div class="v">@(Model.MonthSessions)</div>
+      <span class="h">Scheduled and completed together</span></div>
+  </div>
+  <div class="ms-stat gold">
+    <span class="ic"><i class="bi bi-stopwatch"></i></span>
+    <div><span class="k">Session length</span>
+      <div class="v">@(Config.Masar.SessionMinutes) <small>min</small></div>
+      <span class="h">Every Masar session is the same length</span></div>
+  </div>
+</div>
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">This week</h3><p class="m-small">@(Model.From.Format("l j")) to @(Model.From.AddDays(4).Format("l j F Y"))</p></div><div class="sp">
+    <a class="navbtn" href="@(Routes.To("expert.schedule", new { week = Model.PrevWeek.ToDateString() }))"><i class="bi bi-chevron-left"></i></a>
+    <a class="navbtn" href="@(Routes.To("expert.schedule", new { week = Model.NextWeek.ToDateString() }))"><i class="bi bi-chevron-right"></i></a>
+    <a href="@(Routes.To("expert.availability"))" class="m-btn m-btn-outline m-btn-sm"><i class="bi bi-plus-lg"></i> Add a time slot</a></div></div>
+  <div class="dcb p"><div class="md-table-scroll"><div class="wk"><div></div>
+    @foreach (var day in Model.Days.Values)
+{
+<text>
+      <div class="dh"><b>@(day.Date.Format("D"))</b><span>@(day.Date.Format("j M"))</span></div>
+    </text>
+}
+    @if (Model.Hours.Any())
+{
+    foreach (var hour in Model.Hours)
+    {
+<text>
+      <div class="hh">@(hour)</div>
+      @foreach (var day in Model.Days.Values)
+{
+<text>
+        @{
+    var slot = day.Slots.FirstOrDefault(x => x.SlotLabel == hour);
+}
+        @if (!Helpers.Truthy(slot))
+{
+<text>
+          <div class="cl"></div>
+        </text>
+}
+else if (slot.SessionStatus == "Blocked")
+{
+<text>
+          <div class="ev"><b>Blocked by you</b><span>@(hour) - @(Helpers.Substr(slot.TimeString("End_Time"), 0, 5))</span></div>
+        </text>
+}
+else if (new[] { "Scheduled", "Held" }.Contains(slot.SessionStatus))
+{
+<text>
+          <div class="ev @(slot.StartsAt().IsToday() ? "gold" : "")"><b>@(slot.Client?.User?.FullName)</b><span>@(slot.SessionTopic)<br>@(hour) - @(Helpers.Substr(slot.TimeString("End_Time"), 0, 5))</span></div>
+        </text>
+}
+else if (slot.SessionStatus == "Completed")
+{
+<text>
+          <div class="ev blue"><b>@(slot.Client?.User?.FullName)</b><span>Completed<br>@(hour) - @(Helpers.Substr(slot.TimeString("End_Time"), 0, 5))</span></div>
+        </text>
+}
+else
+{
+<text>
+          <div class="cl"></div>
+        </text>
+}
+      </text>
+}
+    </text>
+    }
+}
+else
+{
+<text>
+      <div class="hh">-</div>
+      @foreach (var day in Model.Days.Values)
+{
+<text><div class="cl"></div></text>
+}
+    </text>
+}
+  </div></div>
+    <div class="ms-sched-legend">
+      <span><em style="background:#EAF3EE;border:1px solid #024940"></em> Client call</span>
+      <span><em style="background:#E8F0F6;border:1px solid #1E5F8A"></em> Completed</span>
+      <span><em style="background:#FBF2E0;border:1px solid #E0A63C"></em> Starting soon</span>
+      <span><em style="background:#F1F4F2;border:1px solid #C3D2CB"></em> Blocked by you</span>
+      <span style="margin-left:auto"><i class="bi bi-info-circle"></i> A free hour shows as an empty cell</span>
+    </div></div>
+</div>
+<div class="d2">
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">When clients book a call</h3><p class="m-small">Last 90 days, by day and hour</p></div></div>
+  <div class="dcb p">@Html.Raw(C.Heatmap(Model.Heatmap.Days, Model.Heatmap.Hours, Model.Heatmap.Matrix))
+    <div class="ms-sched-legend" style="gap:10px">
+      <span><em style="background:var(--mint-100)"></em><em style="background:var(--mint-200)"></em><em style="background:var(--sage)"></em><em style="background:var(--teal)"></em>
+        Quiet to busiest</span>
+    </div>
+    <div class="note" style="margin-top:16px"><i class="bi bi-lightbulb"></i>
+      Opening more free slots in the busiest hours matches when your clients actually book.</div></div>
+</div>
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Today</h3><p class="m-small">@(Clock.Now.Format("l j F Y"))</p></div></div>
+  <div class="dcb p"><div>
+      @if (Model.Today.Any())
+{
+    foreach (var session in Model.Today)
+    {
+<text>
+        <a class="dli" href="@(Routes.To("expert.session.show", new { session = session.ConsultationSessionId }))">@await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = session.Client?.User, Box = "ava ava-sm", Fallback = "av av-sm" })<div><b>@(session.Client?.User?.FullName)</b>
+          <p class="m-small">@(session.SessionTopic)</p></div>
+          <span class="tm">@(session.SlotLabel)<span>@(session.StartsAt().IsFuture() ? session.StartsAt().DiffForHumans() : "Today")</span></span></a>
+      </text>
+    }
+}
+else
+{
+<text>
+        @if (Model.Services.Any())
+{
+    foreach (var service in Model.Services)
+    {
+<text>
+          <a class="dli" href="@(Routes.To("expert.service.show", new { serviceRequest = service.ServiceRequestId }))"><span class="slotic blue"><i class="bi bi-pencil-square"></i></span>
+            <div><b>@(service.Title)</b><p class="m-small">Delivery, @(service.Reference)</p></div>
+            <span class="tm">@(service.DeliveryDate?.Format("j M"))<span>@(service.DeliveryDate?.DiffForHumans())</span></span></a>
+        </text>
+    }
+}
+else
+{
+<text>
+          <p class="m-small" style="padding:18px 0">Nothing is booked for today.</p>
+        </text>
+}
+      </text>
+}
+    </div>
+    <a href="@(Routes.To("expert.availability"))" class="m-btn m-btn-outline m-btn-block" style="margin-top:18px">
+      <i class="bi bi-sliders"></i> Edit my weekly availability</a></div>
+</div>
+</div>

@@ -1,0 +1,150 @@
+@{
+    var ticker = ViewData.Model is Masar.ViewModels.Landing.LandingViewModel landing ? landing.Ticker : new List<TickerEvent>();
+}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="csrf-token" content="@(AntiforgeryToken)">
+<title>@(ViewData["title"] ?? "Masar - Your Business Partner")</title>
+<link rel="icon" href="@(Routes.Asset("img/masar-mark.png"))">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@@400;500;600;700;800&family=Inter:wght@@400;500;600&display=swap" rel="stylesheet">
+<link href="@(Routes.Asset("css/ms-landing.css"))" rel="stylesheet">
+<link href="@(Routes.Asset("css/ms-forms.css"))" rel="stylesheet">
+<link href="@(Routes.Asset("css/ms-responsive.css"))" rel="stylesheet">
+<link href="@(Routes.Asset("css/ms-polish.css"))" rel="stylesheet">
+<script src="@(Routes.Asset("js/ms-ui.js"))" defer></script>
+<script src="@(Routes.Asset("js/ms-polish.js"))" defer></script>
+</head>
+<body class="ms-landing">
+
+<div class="m-announce">
+  <div class="wrap">
+    <span class="m-ann-tag"><span class="m-live"></span> Latest on Masar</span>
+    <div class="m-ticker">
+      <div class="m-ticker-track">
+        @foreach (var item in Helpers.Merge(ticker ?? new(), ticker ?? new()))
+{
+<text>
+          <span class="m-ann"><i class="bi @(item.Icon)"></i><b>@(item.Lead)</b> @(item.Text)</span>
+          <span class="m-ann-dot"></span>
+        </text>
+}
+      </div>
+    </div>
+    <a class="m-ann-all" href="@(Routes.To("notifications"))">All announcements <i class="bi bi-arrow-right"></i></a>
+  </div>
+</div>
+
+<header class="m-header">
+  <div class="wrap">
+    <a class="m-logo" href="@(Routes.To("home"))">
+      <img src="@(Routes.Asset("img/masar-mark.png"))" alt="Masar">
+      <span>
+        <span class="w">MASAR</span>
+        <span class="t" style="display:block">Your Business Partner</span>
+      </span>
+    </a>
+    <nav class="m-nav">
+      <a class="@(Http.RouteIs("home") ? "on" : "")" href="@(Routes.To("home"))">Home</a>
+      <a class="@(Http.RouteIs("experts.*") ? "on" : "")" href="@(Routes.To("experts.index"))">Find an Expert</a>
+      <a class="@(Http.RouteIs("services.*") ? "on" : "")" href="@(Routes.To("services.index"))">Services</a>
+      <a class="@(Http.RouteIs("consultation") ? "on" : "")" href="@(Routes.To("consultation"))">Consultation</a>
+      <a href="@(Routes.To("home"))#how">How it works</a>
+      <a href="@(Routes.To("home"))#experts">For Experts</a>
+    </nav>
+    <div class="d-flex align-items-center gap-3">
+      @if (AuthUser != null)
+{
+<text>
+        <a class="m-link" href="@(Helpers.HomeFor(AuthUser))">My workspace</a>
+        <form method="POST" action="@(Routes.To("logout"))"
+              data-ms-confirm="You will need your email and password to come back in."
+              data-ms-confirm-title="Log out of Masar?"
+              data-ms-confirm-ok="Log me out" data-ms-confirm-cancel="Stay signed in"
+              data-ms-confirm-tone="logout">@Html.AntiForgeryToken()
+          <button type="submit" class="m-btn m-btn-primary m-btn-sm">Log out</button>
+        </form>
+      </text>
+}
+else
+{
+<text>
+        <a class="m-link" href="@(Routes.To("login"))">Log in</a>
+        <a class="m-btn m-btn-primary m-btn-sm" href="@(Routes.To("register"))">Create account</a>
+      </text>
+}
+    </div>
+    <button type="button" class="md-burger" data-md-toggle aria-label="Menu" aria-expanded="false"><i class="bi bi-list"></i></button>
+  </div>
+</header>
+
+@RenderBody()
+
+<footer class="m-footer">
+  <div class="wrap">
+    <div class="m-contactbar">
+      <div class="m-ci"><div class="ic"><i class="bi bi-telephone-fill"></i></div>
+        <div><b>+966 13 800 1482</b><span>Sunday to Thursday, 9:00 - 18:00</span></div></div>
+      <div class="m-ci"><div class="ic"><i class="bi bi-envelope-fill"></i></div>
+        <div><b>support@@masar.sa</b><span>We reply within one working day</span></div></div>
+      <div class="m-ci"><div class="ic"><i class="bi bi-geo-alt-fill"></i></div>
+        <div><b>Jubail Industrial City</b><span>Eastern Province, Saudi Arabia</span></div></div>
+      <div class="m-socials">
+        <a href="#" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+        <a href="#" aria-label="X"><i class="bi bi-twitter-x"></i></a>
+        <a href="#" aria-label="LinkedIn"><i class="bi bi-linkedin"></i></a>
+        <a href="#" aria-label="TikTok"><i class="bi bi-tiktok"></i></a>
+        <a href="#" class="alt" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>
+      </div>
+    </div>
+
+    <div class="m-footer-grid">
+      <div>
+        <img src="@(Routes.Asset("img/masar-logo.png"))" alt="Masar Your Business Partner" style="height:92px;width:auto;margin-bottom:18px">
+        <p class="m-small" style="max-width:300px">An integrated platform that brings business consulting and
+          professional services together in one place, for entrepreneurs and business owners in Saudi Arabia.</p>
+      </div>
+      <div><h5>Platform</h5><ul>
+        <li><a href="@(Routes.To("experts.index"))">Find an Expert</a></li>
+        <li><a href="@(Routes.To("requests.create"))">Post a request</a></li>
+        <li><a href="@(Routes.To("ideas.create"))">Business idea</a></li>
+        <li><a href="@(Routes.To("home"))#how">How it works</a></li>
+        <li><a href="@(Routes.To("home"))#pricing">Pricing</a></li></ul></div>
+      <div><h5>Specializations</h5><ul>
+        @foreach (var spec in Config.Masar.Specializations)
+{
+<text>
+          <li><a href="@(Routes.To("experts.index", new { spec = spec }))">@(spec)</a></li>
+        </text>
+}</ul></div>
+      <div><h5>For experts</h5><ul>
+        <li><a href="@(Routes.To("register", new { @as = "expert" }))">Apply as an expert</a></li>
+        <li><a href="@(Routes.To("home"))#experts">Verification</a></li>
+        <li><a href="@(Routes.To("home"))#pricing">Commission and payouts</a></li>
+        <li><a href="@(Routes.To("home"))#faq">Expert guide</a></li></ul></div>
+      <div><h5>Support</h5><ul>
+        <li><a href="@(Routes.To("home"))#faq">Help centre</a></li>
+        <li><a href="mailto:@(Config.Masar.SupportEmail)">Contact us</a></li>
+        <li><a href="#" data-ms-open="ms-terms">Terms of use</a></li>
+        <li><a href="#" data-ms-open="ms-privacy">Privacy policy</a></li>
+        <li><a href="#" data-ms-open="ms-terms">Refund policy</a></li></ul></div>
+    </div>
+    <div class="m-footer-bottom">
+      <span>© @(Clock.Now.Year) Masar. All rights reserved. Jubail Industrial City, Saudi Arabia.</span>
+      <span>VAT @(Config.Masar.VatNumber) · CR @(Config.Masar.CrNumber)</span>
+    </div>
+  </div>
+</footer>
+
+<a class="ms-top" href="#" data-ms-top aria-label="Back to the top"><i class="bi bi-arrow-up"></i></a>
+
+@await Html.PartialAsync("~/Views/Partials/_LegalDialogs.cshtml")
+@await Html.PartialAsync("~/Views/Partials/_Toasts.cshtml")
+@RenderSection("Dialogs", required: false)
+
+</body>
+</html>

@@ -1,0 +1,19 @@
+@model ChoiceModel
+@{
+    var name = Model.Name;
+    var value = Model.Value;
+    var box = Model.Box;
+    var @checked = Model.Checked;
+    var required = Model.Required;
+    var disabled = Model.Disabled;
+    var extra = Model.Extra;
+    var slot = Model.Slot;
+}
+@{
+    var isOn = @checked || (Convert.ToString(Old(name)) == Convert.ToString(value));
+}
+<label class="@(box) @(Helpers.Truthy(isOn) ? "on" : "") @(extra) @Html.Raw((Errors.Has(name) ? " err " : ""))">
+  <input class="ms-input" type="radio" name="@(name)" value="@(value)"
+         @Html.Raw((required ? " required " : "")) @Html.Raw((disabled ? " disabled " : "")) @(Helpers.Truthy(isOn) ? "checked" : "")>
+  @(slot)
+</label>

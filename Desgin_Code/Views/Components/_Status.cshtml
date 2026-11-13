@@ -1,0 +1,9 @@
+@model StatusModel
+@{
+    var kind = Model.Kind;
+    var value = Model.Value;
+}
+@{
+    var s = Status.Of(kind, value);
+}
+<span class="@(s.Class)">@(s.Label)</span>

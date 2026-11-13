@@ -1,0 +1,154 @@
+@model Masar.ViewModels.ExpertArea.ExpertSettingsViewModel
+@{
+    Layout = "~/Views/Shared/_Dash.cshtml";
+    ViewData["panel"] = "expert";
+    ViewData["dmeCaption"] = Model.DmeCaption;
+    ViewData["title"] = "Settings - Masar";
+    ViewData["dtitle"] = "Settings";
+    ViewData["dcrumb"] = "Settings";
+}
+<div class="d2">
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">My professional profile</h3><p class="m-small">What clients read before they book you</p></div></div>
+  <div class="dcb p">
+    <form method="POST" action="@(Routes.To("expert.profile.update"))">
+      @Html.AntiForgeryToken() <input type="hidden" name="_method" value="PUT">
+      <div class="m-two">
+        @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Experience_Years", Label = "Years of experience", Type = "number", Required = true, Value = Model.Expert.ExperienceYears, Attrs = new AttributeBag { ["min"] = "0", ["max"] = "50", ["step"] = "1" } })
+        @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Session_Price", Label = Model.Expert.IsConsultant() ? "Session price (SAR)" : "Smallest service I accept (SAR)", Type = "number", Required = true, Value = Helpers.ToInt32(Model.Expert.SessionPrice), Help = "At least " + Helpers.Sar(Model.MinPrice, 0) + " SAR for " + Model.Expert.Specialization + ".", Attrs = new AttributeBag { ["min"] = Convert.ToString(Model.MinPrice), ["max"] = "20000", ["step"] = "1" } })
+      </div>
+      @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "City", Label = "City", Options = Config.Masar.Cities, Required = true, Icon = "bi-chevron-down", Value = Model.User.City })
+      @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Bio", Label = "Short bio", Area = true, Required = true, Value = Model.Expert.Bio, Help = "Shown on your public profile. 60 characters minimum.", Attrs = new AttributeBag { ["minlength"] = "60", ["maxlength"] = "1000" } })
+      @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Portfolio_Link", Label = "Portfolio link", Type = "url", Icon = "bi-link-45deg", Value = Model.Expert.PortfolioLink, Placeholder = "behance.net/yourname", Attrs = new AttributeBag { ["maxlength"] = "200" } })
+      <button type="submit" class="m-btn m-btn-primary">Save my profile</button>
+    </form>
+  </div>
+</div>
+<div class="dgrid" style="display:flex;flex-direction:column;gap:20px">
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Account</h3><p class="m-small">Your name, how we reach you and your password</p></div></div>
+  <div class="dcb p">
+    <form method="POST" action="@(Routes.To("expert.settings.update"))">
+      @Html.AntiForgeryToken() <input type="hidden" name="_method" value="PUT">
+      <div class="m-two">
+        @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "first_name", Label = "First name", Required = true, Value = Model.User.FirstName, Attrs = new AttributeBag { ["maxlength"] = "50" } })
+        @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "last_name", Label = "Last name", Required = true, Value = Model.User.LastName, Attrs = new AttributeBag { ["maxlength"] = "50" } })
+      </div>
+      @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Email", Label = "Email address", Type = "email", Required = true, Value = Model.User.Email, Attrs = new AttributeBag { ["maxlength"] = "150" } })
+      @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Phone", Label = "Phone number", Type = "tel", Required = true, Value = Model.User.PhoneDisplay, Attrs = new AttributeBag { ["maxlength"] = "17", ["inputmode"] = "tel", ["data-ms-phone"] = "", ["pattern"] = "^(\\+966|00966|966|0)\\s?5[0-9](\\s?[0-9]){7}$" } })
+      @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "current_password", Label = "Current password", Type = "password", Help = "Only needed when you set a new password.", Attrs = new AttributeBag { ["maxlength"] = "64" } })
+      <div class="m-two">
+        @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Password", Label = "New password", Type = "password", Attrs = new AttributeBag { ["minlength"] = "8", ["maxlength"] = "64", ["pattern"] = "^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9]).{8,64}$", ["data-ms-password"] = "pw-hint" } })
+        @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Password_confirmation", Label = "Confirm new password", Type = "password", Attrs = new AttributeBag { ["minlength"] = "8", ["maxlength"] = "64" } })
+      </div>
+      <p class="m-help" id="pw-hint">Strong, 12 characters, letters and numbers.</p>
+      <button type="submit" class="m-btn m-btn-primary" style="margin-top:14px">Save my account</button>
+    </form>
+  </div>
+</div>
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">My photo</h3><p class="m-small">Clients see it on every card</p></div></div>
+  <div class="dcb p">
+    <div class="d-flex align-items-center gap-3">
+      @await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = Model.User, Box = "ava ava-lg", Fallback = "av av-lg" })
+      <form method="POST" action="@(Routes.To("expert.profile.photo"))" enctype="multipart/form-data" style="flex:1">
+        @Html.AntiForgeryToken()
+        <label class="m-input ms-drop" style="cursor:pointer">
+          <input class="ms-file" type="file" name="photo" accept="image/*" required onchange="this.form.submit()">
+          <span><i class="bi bi-camera"></i> @(Helpers.Truthy(Model.User.PhotoUrl) ? "Change my photo" : "Upload a photo")</span>
+        </label>
+        @if (Errors.GetBag("default").Has("photo"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle-fill"></i> @(Errors.GetBag("default").First("photo"))</p></text>
+}
+        <p class="m-help">JPG or PNG, up to 2 MB.</p>
+      </form>
+    </div>
+  </div>
+</div>
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Portfolio</h3><p class="m-small">Three items or more raise your profile strength</p></div></div>
+  <div class="dcb p">
+    <div class="pgrid" style="margin-top:0">
+      @if (Model.Portfolio.Any())
+{
+    foreach (var item in Model.Portfolio)
+    {
+<text>
+        <figure class="pitem"><img src="@(item.Image)" alt="@(item.Title)">
+          <figcaption>@(item.Title)</figcaption>
+          <form method="POST" action="@(Routes.To("expert.portfolio.destroy", new { portfolio = item.PortfolioId }))"
+                data-ms-confirm="@(item.Title) is removed from your public profile, and the picture is deleted."
+                data-ms-confirm-title="Remove this portfolio item?"
+                data-ms-confirm-ok="Remove it" data-ms-confirm-cancel="Keep it"
+                data-ms-confirm-tone="danger">@Html.AntiForgeryToken() <input type="hidden" name="_method" value="DELETE">
+            <button type="submit" class="m-link" style="border:0;background:none;padding:6px 0;font:inherit;cursor:pointer"><i class="bi bi-trash"></i> Remove</button>
+          </form></figure>
+      </text>
+    }
+}
+else
+{
+<text>
+        <p class="m-small">No portfolio items yet.</p>
+      </text>
+}
+    </div>
+    <form method="POST" action="@(Routes.To("expert.portfolio.store"))" enctype="multipart/form-data" style="margin-top:18px">
+      @Html.AntiForgeryToken()
+      <div class="m-two">
+        @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Title", Label = "Title", Required = true, Placeholder = "Coffee cup line", Attrs = new AttributeBag { ["maxlength"] = "100" } })
+        <div class="m-fg">
+          <label class="m-label" for="Image">Picture</label>
+          <label class="m-input ms-drop" for="Image" style="cursor:pointer">
+            <input class="ms-file" id="Image" type="file" name="Image" accept="image/*" required>
+            <span><i class="bi bi-image"></i> Choose a picture</span>
+          </label>
+          @if (Errors.GetBag("default").Has("Image"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle-fill"></i> @(Errors.GetBag("default").First("Image"))</p></text>
+}
+        </div>
+      </div>
+      @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "description", Label = "Short description", Area = true, Placeholder = "What you made and for whom.", Attrs = new AttributeBag { ["maxlength"] = "500" } })
+      <button type="submit" class="m-btn m-btn-outline"><i class="bi bi-plus-lg"></i> Add a portfolio item</button>
+    </form>
+  </div>
+</div>
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Delete my account</h3><p class="m-small">Nothing with a payment is ever deleted</p></div></div>
+  <div class="dcb p">
+    <p class="m-body">Your account is closed and your email and phone number are anonymised. Your past
+      bookings, invoices and reviews stay on Masar because they belong to your clients too.</p>
+    @if (Errors.GetBag("default").Has("delete"))
+{
+<text><p class="m-err" style="margin-top:12px"><i class="bi bi-exclamation-circle-fill"></i> @(Errors.GetBag("default").First("delete"))</p></text>
+}
+    @if (Helpers.Truthy(Model.HasOpenWork))
+{
+<text>
+      <p class="m-help" style="margin-top:12px">You still have an open booking or proposal. Finish or cancel it first.</p>
+    </text>
+}
+    <a href="#" class="m-btn m-btn-outline" style="margin-top:16px" data-ms-open="ms-delete">Delete my account</a>
+  </div>
+</div>
+</div>
+</div>
+
+@section Dialogs {
+
+<div class="ms-dialog" id="ms-delete" hidden>
+  <form class="card pad" style="width:520px" method="POST" action="@(Routes.To("expert.settings.destroy"))">
+    @Html.AntiForgeryToken() <input type="hidden" name="_method" value="DELETE">
+    <h3 class="m-h3">Delete your Masar account?</h3>
+    <p class="m-body" style="margin-top:10px">You will be signed out and will no longer receive requests or
+      bookings. Your invoices and reviews stay, because your clients need them.</p>
+    <div class="d-flex gap-3" style="margin-top:20px;justify-content:flex-end">
+      <button type="button" class="m-btn m-btn-outline" data-ms-close>Keep my account</button>
+      <button type="submit" class="m-btn m-btn-primary">Delete my account</button>
+    </div>
+  </form>
+</div>
+
+}

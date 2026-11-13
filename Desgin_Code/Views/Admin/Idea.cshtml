@@ -1,0 +1,105 @@
+@model Masar.ViewModels.Admin.AdminIdeaShowViewModel
+@{
+    Layout = "~/Views/Shared/_Dash.cshtml";
+    ViewData["panel"] = "admin";
+    ViewData["dmeCaption"] = Model.DmeCaption;
+    ViewData["title"] = Model.Idea.IdeaName + " - Masar";
+    ViewData["dtitle"] = "Business ideas";
+    ViewData["dcrumb"] = Model.Idea.Reference;
+}
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">@(Model.Idea.Client?.User?.FullName)</h3><p class="m-small">@(Model.Idea.Reference)@if (Helpers.Truthy(Model.Payment))
+{
+<text> &middot; paid @(Helpers.NumberFormat(Convert.ToDouble(Model.Payment.Amount), 2)) SAR on @(Model.Payment.PaymentDate.Format("j M Y"))</text>
+}</p></div><div class="sp">@await Html.PartialAsync("~/Views/Components/_Status.cshtml", new StatusModel { Kind = "idea", Value = Model.Idea.Status })</div></div>
+  <div class="dcb p">
+    <div class="conf-grid">
+      <div><span class="m-small">Budget</span><b>@(Model.Idea.Client?.Budget ?? "-") SAR</b></div>
+      <div><span class="m-small">City</span><b>@(Model.Idea.Client?.User?.City)</b></div>
+      <div><span class="m-small">Interests</span><b>@(string.Join(", ", Model.Idea.Client?.InterestList ?? new()))</b></div>
+      <div><span class="m-small">Package</span><b>@(Helpers.Sar(Config.Masar.IdeaPrice, 0)) SAR + commission + VAT</b></div>
+    </div>
+    @if (Model.Idea.Status == "Requested")
+{
+<text>
+      <form method="POST" action="@(Routes.To("admin.ideas.study", new { idea = Model.Idea.BusinessIdeaId }))" style="margin-top:18px">@Html.AntiForgeryToken()
+        <button type="submit" class="m-btn m-btn-primary"><i class="bi bi-search"></i> Start studying this package</button>
+      </form>
+    </text>
+}
+  </div>
+</div>
+
+@if (new[] { "Requested", "In Study" }.Contains(Model.Idea.Status))
+{
+<text>
+  <form method="POST" action="@(Routes.To("admin.ideas.deliver", new { idea = Model.Idea.BusinessIdeaId }))">
+    @Html.AntiForgeryToken()
+    @for (var i = 0; i < 3; i++)
+{
+<text>
+      <div class="dcard">
+        <div class="dch"><div><h3 class="m-h3">Idea @(i + 1)</h3><p class="m-small">@(i == 0 ? "This one renames the paid row" : "A new Business_Idea row")</p></div></div>
+        <div class="dcb p">
+          @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "ideas[" + i + "][name]", Label = "Idea name", Required = true, Placeholder = "Speciality coffee shop with a retail bean line", Attrs = new AttributeBag { ["maxlength"] = "120", ["id"] = Convert.ToString("idea-name-" + i) } })
+          @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "ideas[" + i + "][description]", Label = "Description for the client", Area = true, Required = true, Placeholder = "The size, the location, the demand and the first step to take.", Attrs = new AttributeBag { ["maxlength"] = "1500", ["id"] = Convert.ToString("idea-desc-" + i) } })
+          <h4 class="m-h4" style="margin:18px 0 10px">What to buy (services)</h4>
+          @for (var s = 0; s < 2; s++)
+{
+<text>
+            <div class="m-two">
+              @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "ideas[" + i + "][services][" + s + "][Service_Type_ID]", Label = "Service package", Options = Model.ServiceTypes.ToDictionary(t => t.ServiceTypeId, t => t.TypeName + " · " + t.ServicePackge).ToList(), Blank = "None", Icon = "bi-chevron-down", Attrs = new AttributeBag { ["id"] = Convert.ToString("idea-" + i + "-svc-" + s) } })
+              @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "ideas[" + i + "][services][" + s + "][Estimated_Cost]", Label = "Estimated cost (SAR)", Type = "number", Attrs = new AttributeBag { ["min"] = "1", ["step"] = "1", ["id"] = Convert.ToString("idea-" + i + "-svccost-" + s) } })
+            </div>
+            @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "ideas[" + i + "][services][" + s + "][Description]", Label = "What it covers", Placeholder = "Café name, logo and menu design", Attrs = new AttributeBag { ["maxlength"] = "400", ["id"] = Convert.ToString("idea-" + i + "-svcdesc-" + s) } })
+          </text>
+}
+          <h4 class="m-h4" style="margin:18px 0 10px">Advice needed (consultations)</h4>
+          @for (var c = 0; c < 2; c++)
+{
+<text>
+            <div class="m-two">
+              @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "ideas[" + i + "][consultations][" + c + "][Consultation_Type_ID]", Label = "Consultation type", Options = Model.ConsultationTypes.ToDictionary(t => t.ConsultationTypeId, t => t.TypeName).ToList(), Blank = "None", Icon = "bi-chevron-down", Attrs = new AttributeBag { ["id"] = Convert.ToString("idea-" + i + "-con-" + c) } })
+              @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "ideas[" + i + "][consultations][" + c + "][Estimated_Cost]", Label = "Estimated cost (SAR)", Type = "number", Attrs = new AttributeBag { ["min"] = "1", ["step"] = "1", ["id"] = Convert.ToString("idea-" + i + "-concost-" + c) } })
+            </div>
+            @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "ideas[" + i + "][consultations][" + c + "][Description]", Label = "What it covers", Placeholder = "Commercial registration and municipality licence", Attrs = new AttributeBag { ["maxlength"] = "400", ["id"] = Convert.ToString("idea-" + i + "-condesc-" + c) } })
+          </text>
+}
+        </div>
+      </div>
+    </text>
+}
+    <div class="dcard">
+      <div class="dcb p"><div class="d-flex gap-3" style="justify-content:flex-end">
+        <a href="@(Routes.To("admin.ideas"))" class="m-btn m-btn-outline">Back to the list</a>
+        <button type="submit" class="m-btn m-btn-primary">Deliver the three ideas</button>
+      </div></div>
+    </div>
+  </form>
+</text>
+}
+else
+{
+<text>
+  <div class="dcard">
+    <div class="dch"><div><h3 class="m-h3">The delivered package</h3><p class="m-small">@(Model.Package.Count()) @(Helpers.Plural("idea", Model.Package.Count())), valid until @(Model.Idea.ExpirationDate?.Format("j M Y"))</p></div></div>
+    <div class="dcb p">
+      @foreach (var row in Model.Package)
+{
+<text>
+        <div class="pdoc" style="flex-wrap:wrap">
+          <i class="bi bi-lightbulb f"></i>
+          <div style="flex:1"><b>@(row.IdeaName)</b><span class="m-small">@(row.Services.Count()) @(Helpers.Plural("service", row.Services.Count())),
+            @(row.Consultations.Count()) @(Helpers.Plural("consultation", row.Consultations.Count())) &middot; @(Helpers.Sar(row.EstimatedCost(), 0)) SAR</span></div>
+          @await Html.PartialAsync("~/Views/Components/_Status.cshtml", new StatusModel { Kind = "idea", Value = row.Status })
+          @if (Helpers.Truthy(row.Description))
+{
+<text><p class="m-small" style="width:100%;margin-top:8px">@(row.Description)</p></text>
+}
+        </div>
+      </text>
+}
+    </div>
+  </div>
+</text>
+}

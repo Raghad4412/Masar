@@ -1,0 +1,167 @@
+@model Masar.ViewModels.Client.RequestShowViewModel
+@{
+    Layout = "~/Views/Shared/_App.cshtml";
+    ViewData["navItem"] = "requests";
+    ViewData["title"] = Model.Request.Title + " - Masar";
+}
+@section Crumb {
+
+  <span>Home</span><i class="bi bi-chevron-right"></i><a href="@(Routes.To("requests.index"))">My Requests</a><i class="bi bi-chevron-right"></i><span class="cur">@(Model.Request.RequestReference)</span>
+
+}
+
+<div class="wrap">
+  <div class="page-h">
+    <div><div class="d-flex align-items-center gap-3">
+        <h1 class="m-h1">@(Model.Request.Title)</h1>
+        @await Html.PartialAsync("~/Views/Components/_Status.cshtml", new StatusModel { Kind = "request", Value = Model.Request.Status })</div>
+      <p class="m-body">@(Model.Request.RequestReference) &middot; closes @(Model.Request.Deadline.Format("j M Y"))</p></div>
+    @if (Model.Request.Status == "Open")
+{
+<text>
+      <div class="d-flex gap-3">
+        <a href="@(Routes.To("requests.edit", new { serviceRequest = Model.Request.ServiceRequestId }))" class="m-btn m-btn-outline">Edit</a>
+        <a href="#" class="m-btn m-btn-outline" data-ms-open="ms-close">Close the request</a>
+      </div>
+    </text>
+}
+  </div>
+  <div class="statrow">
+    <div class="stat"><span class="m-small">Proposals</span><b>@(Model.Proposals.Count())</b></div>
+    <div class="stat"><span class="m-small">Experts who can see it</span><b>@(Model.Experts)</b></div>
+    <div class="stat"><span class="m-small">@(Model.Request.Type?.ServicePackge) service, budget range</span><b>@(Helpers.NumberFormat(Convert.ToDouble(Model.Request.BudgetMin()))) - @(Helpers.NumberFormat(Convert.ToDouble(Model.Request.BudgetMax())))</b></div>
+    <div class="stat"><span class="m-small">Days left</span><b>@(Model.DaysLeft)</b></div>
+  </div>
+  @if (Model.Proposals.Any())
+{
+<text>
+    <div class="res-h" style="margin-bottom:18px">
+      <span class="m-small"><b>@(Model.Proposals.Count()) @(Helpers.Plural("proposal", Model.Proposals.Count()))</b> &middot; @(Helpers.NumberFormat(Convert.ToDouble(Model.Proposals.Min(x => x.ProposalPrice)))) - @(Helpers.NumberFormat(Convert.ToDouble(Model.Proposals.Max(x => x.ProposalPrice)))) SAR</span>
+      <div class="d-flex gap-2 align-items-center">
+        <form class="m-input sm" method="GET" action="@(Routes.To("requests.show", new { serviceRequest = Model.Request.ServiceRequestId }))">
+          <select name="sort" onchange="this.form.submit()" style="flex:1;min-width:0;border:0;outline:0;background:transparent;font:inherit;color:inherit;padding:0;appearance:none;cursor:pointer">
+            <option value="" @(!Helpers.Truthy(Model.Sort) ? "selected" : "")>Sort: Newest</option>
+            <option value="price" @(Model.Sort == "price" ? "selected" : "")>Sort: Price, low to high</option>
+            <option value="delivery" @(Model.Sort == "delivery" ? "selected" : "")>Sort: Delivery, fastest</option>
+            <option value="rating" @(Model.Sort == "rating" ? "selected" : "")>Sort: Rating</option>
+          </select>
+          <i class="bi bi-chevron-down"></i>
+        </form>
+        <a href="@(Routes.To("requests.compare", new { serviceRequest = Model.Request.ServiceRequestId }))" class="m-btn m-btn-outline m-btn-sm"><i class="bi bi-table"></i> Compare all</a>
+      </div>
+    </div>
+  </text>
+}
+  
+  @if (!Model.Proposals.Any())
+{
+<text>
+  <div class="bcols">
+    <section>
+        <div class="empty" style="padding:48px 36px">
+          @await Html.PartialAsync("~/Views/Svg/_EmptyProposals.cshtml")
+          <h3 class="m-h3" style="margin-top:20px">No proposals yet</h3>
+          <p class="m-body" style="max-width:430px;margin:10px auto 0">Your request is published and
+            @(Model.Experts) verified @(Model.Request.FieldName()) @(Helpers.Plural("expert", Model.Experts)) can see it.
+            The first proposal usually arrives within 9 hours.</p>
+          <div class="d-flex gap-3" style="justify-content:center;margin-top:22px">
+            <a href="#suggested" class="m-btn m-btn-outline">Invite experts</a>
+            <button type="button" class="m-btn m-btn-primary"
+                    onclick="navigator.clipboard.writeText('@(Routes.To("requests.show", new { serviceRequest = Model.Request.ServiceRequestId }))')">Share the request</button>
+          </div>
+        </div>
+    </section>
+    <aside>
+      @await Html.PartialAsync("~/Views/Client/Requests/Partials/_Rail.cshtml", null, new ViewDataDictionary(ViewData) { ["request"] = Model.Request, ["files"] = Model.Files, ["suggested"] = Model.Suggested })
+    </aside>
+  </div>
+  </text>
+}
+else
+{
+<text>
+        <div class="pgrid3">
+          @foreach (var proposal in Model.Proposals)
+{
+<text>
+            @{
+    var u = proposal.Expert.User;
+}
+            <div class="pcard">
+              <div class="pc-head">
+                <span class="ec-pic">@await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = u, Box = "ava ava-lg", Fallback = "av av-lg" })<i class="bi bi-patch-check-fill badge-v"></i></span>
+                <div>
+                  <h4 class="m-h4">@(u.FullName)</h4>
+                  <p class="m-small">@(proposal.Expert.Specialization) · @(u.City)</p>
+                  <div class="ec-rate" style="border:0;padding:6px 0 0">@if (Helpers.Truthy(proposal.Expert.Rating))
+{
+<text>@await Html.PartialAsync("~/Views/Components/_Stars.cshtml", new StarsModel { Rating = proposal.Expert.Rating }) <b>@(Helpers.NumberFormat(Convert.ToDouble(proposal.Expert.Rating), 1))</b> <span class="m-small">(@(Model.Stats.ExpertReviewCount(proposal.Expert)))</span></text>
+}
+else
+{
+<text><span class="m-small">No reviews yet</span></text>
+}</div>
+                </div>
+                @if (Helpers.Truthy(Model.BestValue) && (Model.BestValue.ProposalId == proposal.ProposalId))
+{
+<text>
+                  <span class="m-chip chip-gold"><i class="bi bi-trophy-fill"></i> Best value</span>
+                </text>
+}
+else if (proposal.IsNew())
+{
+<text>
+                  <span class="m-chip chip-new">New</span>
+                </text>
+}
+              </div>
+              <div class="pc-nums">
+                <div><span class="m-small">Price</span><b>@(Helpers.Sar(proposal.ProposalPrice, 0)) SAR</b></div>
+                <div><span class="m-small">Delivery</span><b>@(proposal.DeliveryTime) days</b></div>
+                <div><span class="m-small">Valid until</span><b>@(proposal.ExpirationTime.Format("j M"))</b></div>
+              </div>
+              <p class="m-label" style="margin-top:16px">Scope of work</p>
+              <ul class="scope">
+                @foreach (var line in proposal.ScopeLines)
+{
+<text><li><i class="bi bi-check2"></i> @(line)</li></text>
+}
+              </ul>
+              <div class="pc-foot">
+                
+                <button type="button" class="m-btn m-btn-outline" disabled title="Chat opens after you accept">Message</button>
+                <a href="@(Routes.To("proposals.show", new { proposal = proposal.ProposalId }))" class="m-btn m-btn-primary">View proposal</a>
+              </div>
+            </div>
+          </text>
+}
+        </div>
+  </text>
+}
+</div>
+
+@section Dialogs {
+
+@if (Model.Request.Status == "Open")
+{
+<text>
+  <div class="ms-dialog" id="ms-close" hidden>
+    <form class="card pad" style="width:520px" method="POST" action="@(Routes.To("requests.close", new { serviceRequest = Model.Request.ServiceRequestId }))">
+      @Html.AntiForgeryToken()
+      <h3 class="m-h3">Close this request?</h3>
+      <p class="m-body" style="margin-top:10px">Experts can no longer send proposals, and the proposals
+        still waiting are rejected. You can post a new request at any time.</p>
+      <div class="m-fg" style="margin-top:18px">
+        <label class="m-label" for="close-reason">Reason <span class="opt">Optional</span></label>
+        <div class="m-input area"><textarea id="close-reason" name="reason" maxlength="300" placeholder="Why are you closing it?"></textarea></div>
+      </div>
+      <div class="d-flex gap-3" style="margin-top:20px;justify-content:flex-end">
+        <button type="button" class="m-btn m-btn-outline" data-ms-close>Keep it open</button>
+        <button type="submit" class="m-btn m-btn-primary">Close the request</button>
+      </div>
+    </form>
+  </div>
+</text>
+}
+
+}

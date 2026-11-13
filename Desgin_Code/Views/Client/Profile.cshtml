@@ -1,0 +1,119 @@
+@model Masar.ViewModels.Client.ProfileViewModel
+@{
+    Layout = "~/Views/Shared/_App.cshtml";
+    ViewData["navItem"] = "bookings";
+    ViewData["title"] = "My profile - Masar";
+}
+@section Crumb {
+
+  <span>Home</span><i class="bi bi-chevron-right"></i><span class="cur">My profile</span>
+
+}
+
+<div class="wrap narrow">
+  <div class="page-h">
+    <div><h1 class="m-h1">My profile</h1><p class="m-body">Your details, your budget and what you are interested in</p></div>
+  </div>
+
+  <div class="card pad">
+    <div class="d-flex align-items-center gap-3">
+      @await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = Model.User, Box = "ava ava-lg", Fallback = "av av-lg" })
+      <form method="POST" action="@(Routes.To("profile.photo"))" enctype="multipart/form-data" style="flex:1">
+        @Html.AntiForgeryToken()
+        <label class="m-input ms-drop" style="cursor:pointer">
+          <input class="ms-file" type="file" name="photo" accept="image/*" required onchange="this.form.submit()">
+          <span><i class="bi bi-camera"></i> @(Helpers.Truthy(Model.User.PhotoUrl) ? "Change my photo" : "Upload a photo")</span>
+        </label>
+        @if (Errors.GetBag("default").Has("photo"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle"></i> @(Errors.GetBag("default").First("photo"))</p></text>
+}
+        <p class="m-help">JPG or PNG, up to 2 MB.</p>
+      </form>
+    </div>
+  </div>
+  <form class="card pad" style="margin-top:20px" method="POST" action="@(Routes.To("profile.update"))">
+    @Html.AntiForgeryToken() <input type="hidden" name="_method" value="PUT">
+    <h3 class="m-h3">Your details</h3>
+    <div class="m-two" style="margin-top:18px">
+      @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "first_name", Label = "First name", Required = true, Value = Model.User.FirstName, Attrs = new AttributeBag { ["maxlength"] = "50" } })
+      @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "last_name", Label = "Last name", Required = true, Value = Model.User.LastName, Attrs = new AttributeBag { ["maxlength"] = "50" } })
+    </div>
+    <div class="m-two">
+      @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Email", Label = "Email address", Type = "email", Required = true, Value = Model.User.Email, Attrs = new AttributeBag { ["maxlength"] = "150" } })
+      @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Phone", Label = "Phone number", Type = "tel", Required = true, Value = Model.User.PhoneDisplay, Attrs = new AttributeBag { ["maxlength"] = "17", ["inputmode"] = "tel", ["data-ms-phone"] = "", ["pattern"] = "^(\\+966|00966|966|0)\\s?5[0-9](\\s?[0-9]){7}$" } })
+    </div>
+    <div class="m-two">
+      @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "City", Label = "City", Options = Config.Masar.Cities, Required = true, Icon = "bi-chevron-down", Value = Model.User.City })
+      @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Budget", Label = "Your budget (SAR)", Options = Config.Masar.Budgets, Required = true, Icon = "bi-chevron-down", Value = Model.Client.Budget })
+    </div>
+    <div class="m-fg">
+      <label class="m-label">Your interests</label>
+      
+      <div class="ms-chiprow @Html.Raw((Errors.GetBag("default").Has("interests") ? " err " : ""))">
+        @foreach (var interest in Config.Masar.Interests)
+{
+<text>
+          @{ Func<object?, IHtmlContent> slot8 = @<text>@(interest)</text>; }
+@await Html.PartialAsync("~/Views/Components/_Check.cshtml", new CheckModel { Name = "interests[]", Value = interest, Wrap = "fchip", Checked = Old("interests", Model.Client.InterestList).Contains(interest), Slot = slot8(null) })
+        </text>
+}
+      </div>
+      @if (Errors.GetBag("default").Has("interests"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle"></i> @(Errors.GetBag("default").First("interests"))</p></text>
+}
+      <p class="m-help">Used to suggest business ideas and match you with the right experts.</p>
+    </div>
+    <div class="m-fg">
+      <label class="m-label" for="interest-other">Something else <span class="opt">Optional</span></label>
+      <div class="m-input"><input id="interest-other" name="interests[]" type="text" maxlength="30"
+             placeholder="An interest that is not in the list"><i class="bi bi-plus-circle" style="color:#9BAFA6"></i></div>
+    </div>
+    <button type="submit" class="m-btn m-btn-primary">Save my profile</button>
+  </form>
+  <form class="card pad" style="margin-top:20px" method="POST" action="@(Routes.To("profile.password"))">
+    @Html.AntiForgeryToken() <input type="hidden" name="_method" value="PUT">
+    <h3 class="m-h3">Change my password</h3>
+    @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "current_password", Label = "Current password", Type = "password", Required = true, Fg = "m-fg", Attrs = new AttributeBag { ["maxlength"] = "64" } })
+    <div class="m-two">
+      @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Password", Label = "New password", Type = "password", Required = true, Attrs = new AttributeBag { ["minlength"] = "8", ["maxlength"] = "64", ["pattern"] = "^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9]).{8,64}$", ["data-ms-password"] = "pw-hint" } })
+      @await Html.PartialAsync("~/Views/Components/_Field.cshtml", new FieldModel { Name = "Password_confirmation", Label = "Confirm new password", Type = "password", Required = true, Attrs = new AttributeBag { ["minlength"] = "8", ["maxlength"] = "64" } })
+    </div>
+    <p class="m-help" id="pw-hint">Strong, 12 characters, letters and numbers.</p>
+    <button type="submit" class="m-btn m-btn-primary" style="margin-top:14px">Change my password</button>
+  </form>
+  <div class="card pad" style="margin-top:20px">
+    <h3 class="m-h3">Delete my account</h3>
+    <p class="m-body" style="margin-top:10px">Your account is closed and your email and phone number are
+      anonymised. Your bookings, invoices and reviews stay on Masar because they belong to your experts too.</p>
+    @if (Errors.GetBag("default").Has("delete"))
+{
+<text><p class="m-err" style="margin-top:12px"><i class="bi bi-exclamation-circle"></i> @(Errors.GetBag("default").First("delete"))</p></text>
+}
+    @if (Helpers.Truthy(Model.HasOpenWork))
+{
+<text>
+      <p class="m-help" style="margin-top:12px">You still have an open booking, request or idea package. Finish or cancel it first.</p>
+    </text>
+}
+    <a href="#" class="m-btn m-btn-outline" style="margin-top:16px" data-ms-open="ms-delete">Delete my account</a>
+  </div>
+</div>
+
+@section Dialogs {
+
+<div class="ms-dialog" id="ms-delete" hidden>
+  <form class="card pad" style="width:520px" method="POST" action="@(Routes.To("profile.destroy"))">
+    @Html.AntiForgeryToken() <input type="hidden" name="_method" value="DELETE">
+    <h3 class="m-h3">Delete your Masar account?</h3>
+    <p class="m-body" style="margin-top:10px">You will be signed out and will no longer be able to book or
+      post requests. Your invoices and reviews stay, because your experts need them.</p>
+    <div class="d-flex gap-3" style="margin-top:20px;justify-content:flex-end">
+      <button type="button" class="m-btn m-btn-outline" data-ms-close>Keep my account</button>
+      <button type="submit" class="m-btn m-btn-primary">Delete my account</button>
+    </div>
+  </form>
+</div>
+
+}

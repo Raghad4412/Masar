@@ -1,0 +1,100 @@
+@model Masar.ViewModels.ExpertArea.ExpertEarningsViewModel
+@{
+    Layout = "~/Views/Shared/_Dash.cshtml";
+    ViewData["panel"] = "expert";
+    ViewData["dmeCaption"] = Model.DmeCaption;
+    ViewData["title"] = "Earnings and Payouts - Masar";
+    ViewData["dtitle"] = "Earnings and Payouts";
+    ViewData["dcrumb"] = "Earnings and Payouts";
+}
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Balance</h3><p class="m-small">Your money on Masar right now</p></div></div>
+  <div class="dcb p"><div class="balgrid">
+      <div class="bal hi"><span class="m-small">Released this period</span><b>@(Helpers.NumberFormat(Model.Available, 2)) SAR</b>
+        <p class="m-small" style="margin-top:12px;color:#CFE2D7">Already paid out to you</p></div>
+      <div class="bal"><span class="m-small">Held in escrow</span><b>@(Helpers.NumberFormat(Model.InEscrow, 2)) SAR</b>
+        <p class="m-small" style="margin-top:12px">Released when each booking is completed</p></div>
+      <div class="bal"><span class="m-small">Paid out in @(Clock.Now.Year)</span><b>@(Helpers.NumberFormat(Model.ReleasedYear, 2)) SAR</b>
+        <p class="m-small" style="margin-top:12px">Across @(Model.Payouts.Count()) @(Helpers.Plural("payout", Model.Payouts.Count()))</p></div>
+    </div>
+    <div class="note" style="margin-top:18px"><i class="bi bi-bank"></i>
+      Payouts are released on the 1st and the 16th of every month. Your next one is on @(Model.NextPayout.Format("j F Y")).</div></div>
+</div>
+<div class="d2">
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Income by month</h3><p class="m-small">What you billed and what reached you, last eight months</p></div><div class="sp"><span class="legend2"><span><em style="background:#024940"></em> Billed to the client</span>
+      <span><em style="background:#8BA894"></em> Net to you</span></span></div></div>
+  <div class="dcb ">@Html.Raw(C.Bars(Model.ByMonth.Labels, Model.ByMonth.Billed, Model.ByMonth.Net))
+    <div class="chartfoot">
+      <div><span class="m-small">Billed in eight months</span><b>@(Helpers.Sar(Helpers.ArraySum(Model.ByMonth.Billed), 0)) SAR</b></div>
+      <div><span class="m-small">Net to you</span><b>@(Helpers.Sar(Helpers.ArraySum(Model.ByMonth.Net), 0)) SAR</b></div>
+      <div><span class="m-small">Masar commission @(Helpers.ToInt32((Config.Masar.Commission * 100)))%</span><b>-@(Helpers.Sar(Helpers.ArraySum(Model.ByMonth.Billed) - Helpers.ArraySum(Model.ByMonth.Net), 0)) SAR</b></div>
+      <div><span class="m-small">Paid out in @(Clock.Now.Year)</span><b>@(Helpers.Sar(Model.ReleasedYear, 0)) SAR</b></div>
+    </div></div>
+</div>
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Where @(Clock.Now.Format("F")) came from</h3><p class="m-small">@(Helpers.Sar(Helpers.ArraySum(Model.ByField), 0)) SAR released this month</p></div></div>
+  <div class="dcb p"><div class="mix">
+      @{
+    var total = Helpers.Or(Helpers.ArraySum(Model.ByField), 1);
+    var colours = C.DONUT;
+}
+      @if (Model.ByField.Any())
+{
+    foreach (var loop in Model.ByField.Pairs().Loop())
+    {
+<text>@{ var (label, amount) = loop.Item; }
+        <div class="mixrow"><div class="t"><span>@(label)</span><b>@(Helpers.Sar(amount, 0)) SAR</b></div>
+        <div class="tr"><i style="width:@(Helpers.ToInt32(Helpers.Round(amount / total * 100)))%;background:@(colours[loop.Index % colours.Count()])"></i></div></div>
+      </text>
+    }
+}
+else
+{
+<text>
+        <p class="m-small">Nothing was released this month yet.</p>
+      </text>
+}
+    </div>
+    <div class="note" style="margin-top:20px"><i class="bi bi-info-circle"></i>
+      A payment is released to you only after the client marks the session or the service completed.</div></div>
+</div>
+</div>
+<div class="d2">
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Payouts</h3><p class="m-small">Every transfer Masar has made to you</p></div><div class="sp"><span class="seg"><span class="on">@(Clock.Now.Year)</span></span></div></div>
+  <div class="dcb t"><div class="md-table-scroll"><table class="dt2">
+    <tr><th>Payout</th><th>Period</th><th class="r">Gross SAR</th>
+      <th class="r">Masar @(Helpers.ToInt32((Config.Masar.Commission * 100)))%</th><th class="r">Net to you</th><th>Status</th></tr>
+    @if (Model.Payouts.Any())
+{
+    foreach (var payout in Model.Payouts)
+    {
+<text>
+      @{
+    var gross = Helpers.Round(payout.Amount / (1 - Config.Masar.Commission), 2);
+}
+      <tr><td class="nw"><b>@(payout.Reference)</b></td><td class="nw">@(payout.From.Format("j")) to @(payout.To.Format("j M Y"))</td><td class="r">@(Helpers.NumberFormat(gross, 2))</td>
+        <td class="r" style="color:#B42318">@(Helpers.NumberFormat(gross - payout.Amount, 2))</td><td class="r"><b>@(Helpers.NumberFormat(payout.Amount, 2))</b></td>
+        <td class="nw"><span class="st done">Paid</span></td></tr>
+    </text>
+    }
+}
+else
+{
+<text>
+      <tr><td colspan="6"><p class="m-body" style="padding:18px 0">No payout has been released to you yet.</p></td></tr>
+    </text>
+}
+  </table></div></div>
+</div>
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">This year, in short</h3><p class="m-small">1 January to @(Clock.Now.Format("j F Y"))</p></div></div>
+  <div class="dcb p"><div class="pl"><span>Billed to clients in @(Clock.Now.Year)</span><span>@(Helpers.NumberFormat(Model.BilledYear, 2)) SAR</span></div>
+    <div class="pl"><span>Masar commission, @(Helpers.ToInt32((Config.Masar.Commission * 100)))%</span><span>-@(Helpers.NumberFormat(Model.CommissionYear, 2)) SAR</span></div>
+    <div class="pl" style="border-bottom:0"><span>Paid to you</span><span>@(Helpers.NumberFormat(Model.ReleasedYear, 2)) SAR</span></div>
+    <div class="note" style="margin-top:16px"><i class="bi bi-receipt"></i>
+      VAT of @(Helpers.ToInt32((Config.Masar.Vat * 100)))% is added on top of your price, charged to the client and paid to ZATCA by Masar.
+      It never comes out of your side of the invoice.</div></div>
+</div>
+</div>

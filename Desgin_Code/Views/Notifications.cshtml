@@ -1,0 +1,56 @@
+@model Masar.ViewModels.Client.NotificationsViewModel
+@{
+    Layout = AuthUser!.IsClient() ? "~/Views/Shared/_App.cshtml" : "~/Views/Shared/_Dash.cshtml";
+    if (AuthUser!.IsClient())
+    {
+        ViewData["navItem"] = "bookings";
+    }
+    else
+    {
+        ViewData["panel"] = Model.Panel;
+        ViewData["dmeCaption"] = Model.DmeCaption;
+        ViewData["mainClass"] = "page";
+    }
+    ViewData["title"] = "Notifications - Masar";
+    ViewData["dtitle"] = "Notifications";
+    ViewData["dcrumb"] = "Notifications";
+}
+@section Crumb {
+
+  <span>Home</span><i class="bi bi-chevron-right"></i><span class="cur">Notifications</span>
+
+}
+
+<div class="wrap narrow">
+  <div class="page-h">
+    <div><h1 class="m-h1">Notifications</h1><p class="m-body">Everything that happened on your account</p></div>
+  </div>
+  <div class="card pad">
+    @if (Model.Items.Any())
+{
+    foreach (var item in Model.Items)
+    {
+<text>
+      <div class="sline" style="padding:14px 0">
+        <span class="@(Helpers.Truthy(item.Unread) ? "slotic gold" : "slotic")"><i class="bi bi-bell"></i></span>
+        <div><b style="font-weight:@(Helpers.Truthy(item.Unread) ? 700 : 500)">@(item.Text)</b>
+          <p class="m-small">@(item.When)@if (Helpers.Truthy(item.Unread))
+{
+<text> &middot; new </text>
+}</p></div>
+        @if (Helpers.Truthy(item.Url))
+{
+<text><a class="m-link" href="@(item.Url)">Open</a></text>
+}
+      </div>
+    </text>
+    }
+}
+else
+{
+<text>
+      <p class="m-body">Nothing new yet. New proposals, payments, messages and document decisions appear here.</p>
+    </text>
+}
+  </div>
+</div>

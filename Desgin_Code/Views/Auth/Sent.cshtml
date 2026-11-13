@@ -1,0 +1,33 @@
+@model Masar.ViewModels.Auth.SentViewModel
+@{
+    Layout = "~/Views/Shared/_Auth.cshtml";
+    ViewData["title"] = "Check your email - Masar";
+}
+@await Html.PartialAsync("~/Views/Partials/_AuthTop.cshtml")
+<div class="m-center">
+  <img class="m-center-img" src="@(Routes.Asset("img/auth-team.jpg"))" alt="">
+  <div class="m-center-veil"></div>
+  <div class="m-card m-card-pad" style="width:560px;text-align:center">
+    <div class="m-icon-xl" style="margin:0 auto 28px"><i class="bi bi-envelope-check"></i></div>
+    <h1 class="m-h1">Check your email</h1>
+    <p class="m-body" style="margin:14px 0 26px">We sent a reset link to<br>
+      <strong style="color:var(--ink)">@(Model.Email)</strong></p>
+    <div style="background:var(--mint-50);border:1px solid var(--line);border-radius:var(--r);padding:20px;text-align:left">
+      <p class="m-small">Nothing in your inbox after a minute? Look in the spam folder, or make sure the
+        address is the one you registered with.</p>
+      @if (Helpers.Truthy(Model.Link))
+{
+<text>
+        <p class="m-small" style="margin-top:12px"><i class="bi bi-envelope-paper"></i> Simulated email:
+          <a class="m-link" href="@(Model.Link)">open the reset link</a></p>
+      </text>
+}
+    </div>
+    <form method="POST" action="@(Routes.To("password.email"))" style="margin-top:26px">
+      @Html.AntiForgeryToken()
+      <input type="hidden" name="Email" value="@(Model.Email)">
+      <button type="submit" class="m-btn m-btn-outline m-btn-block">Resend the link</button>
+    </form>
+    <p class="m-small" style="margin-top:24px"><a class="m-link" href="@(Routes.To("login"))"><i class="bi bi-arrow-left"></i> Back to log in</a></p>
+  </div>
+</div>

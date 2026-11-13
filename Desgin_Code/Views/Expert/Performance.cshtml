@@ -1,0 +1,97 @@
+@model Masar.ViewModels.ExpertArea.ExpertPerformanceViewModel
+@{
+    Layout = "~/Views/Shared/_Dash.cshtml";
+    ViewData["panel"] = "expert";
+    ViewData["dmeCaption"] = Model.DmeCaption;
+    ViewData["title"] = "Performance and Reviews - Masar";
+    ViewData["dtitle"] = "Performance";
+    ViewData["dcrumb"] = "Performance and Reviews";
+}
+<div class="ms-stat-row">
+  <div class="ms-stat">
+    <span class="ic"><i class="bi bi-trophy"></i></span>
+    <div><span class="k">Proposal win rate</span>
+      <div class="v">@(Model.Win.Rate) <small>%</small></div>
+      <span class="h">@(Model.Win.Accepted) of @(Model.Win.Total) @(Helpers.Plural("proposal", Model.Win.Total)) accepted</span></div>
+  </div>
+  <div class="ms-stat blue">
+    <span class="ic"><i class="bi bi-lightning-charge"></i></span>
+    <div><span class="k">First reply time</span>
+      <div class="v">@(Helpers.Truthy(Model.ReplyHours) ? Model.ReplyHours : "-")@if (Helpers.Truthy(Model.ReplyHours))
+{
+<text><small>h</small></text>
+}</div>
+      <span class="h">@(Helpers.Truthy(Model.ReplyHours) ? "Average first reply across your chats" : "No chat has been answered yet")</span></div>
+  </div>
+  <div class="ms-stat green">
+    <span class="ic"><i class="bi bi-arrow-repeat"></i></span>
+    <div><span class="k">Repeat clients</span>
+      <div class="v">@(Model.RepeatClients)</div>
+      <span class="h">Clients who booked you more than once</span></div>
+  </div>
+  <div class="ms-stat gold">
+    <span class="ic"><i class="bi bi-calendar2-check"></i></span>
+    <div><span class="k">Delivered on time</span>
+      <div class="v">@(Model.OnTime) <small>%</small></div>
+      <span class="h">@(Model.Completed) completed @(Helpers.Plural("booking", Model.Completed)) in total</span></div>
+  </div>
+</div>
+<div class="d2">
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Rating over time</h3><p class="m-small">Average of every review you received that month</p></div><div class="sp"><span class="seg"><span class="on">8M</span><span>12M</span></span></div></div>
+  <div class="dcb ">@Html.Raw(C.Line(Model.RatingByMonth.Labels, Model.RatingByMonth.Values, 4.2, 5.0))<div class="chartfoot">
+      <div><span class="m-small">Overall rating</span><b>@(Helpers.Truthy(Model.Expert.Rating) ? Helpers.NumberFormat(Convert.ToDouble(Model.Expert.Rating), 1) : "-") / 5</b></div>
+      <div><span class="m-small">Reviews</span><b>@(Model.Reviews.Count())</b></div>
+      <div><span class="m-small">Five star share</span><b>@(Helpers.Truthy(Model.Reviews.Count()) ? Helpers.ToInt32(Helpers.Round(Model.Reviews.Where(x => x.Rating == 5).Count() / Model.Reviews.Count() * 100)) : 0)%</b></div>
+      <div><span class="m-small">Lowest review</span><b>@(Helpers.Truthy(Model.Reviews.Count()) ? Model.Reviews.Min(x => x.Rating) + " / 5" : "-")</b></div>
+    </div></div>
+</div>
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Answer speed</h3><p class="m-small">How fast you reply to a new request</p></div></div>
+  <div class="dcb p"><div class="center">@Html.Raw(C.Gauge(Model.Speed, Helpers.Truthy(Model.ReplyHours) ? Model.ReplyHours + " hours" : "no replies yet"))</div><div class="ckl" style="margin-top:18px">
+      <div><i class="bi bi-check-circle-fill"></i> @(Helpers.Truthy(Model.ReplyHours) ? "Average first reply " + Model.ReplyHours + " " + Helpers.Plural("hour", Model.ReplyHours) : "No chat has been answered yet")</div>
+      <div><i class="bi bi-check-circle-fill"></i> A proposal is valid for @(Config.Masar.ProposalValidityDays) days after you send it</div>
+      <div><i class="bi bi-exclamation-circle-fill" style="color:#E0A63C"></i>
+        Answering in the first hour wins the client far more often</div>
+    </div></div>
+</div>
+</div>
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">How clients rate you</h3><p class="m-small">@(Model.Reviews.Count()) @(Helpers.Plural("review", Model.Reviews.Count()))</p></div><div class="sp"><span class="bigstars sm">@(Helpers.Truthy(Model.Expert.Rating) ? Helpers.NumberFormat(Convert.ToDouble(Model.Expert.Rating), 1) : "-") <i class="bi bi-star-fill"></i></span></div></div>
+  <div class="dcb p"><div class="rbars" style="margin-top:4px">
+      @foreach (var (star, row) in Model.Distribution.Pairs())
+{
+<text>
+        <div class="rbar"><span>@(star)</span><i class="bi bi-star-fill"></i>
+          <span class="tr"><span class="fl" style="width:@(row.Percent)%"></span></span><span>@(row.Count)</span></div>
+      </text>
+}
+    </div></div>
+</div>
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Latest reviews</h3><p class="m-small">Clients can only review a service they paid for</p></div><div class="sp"><a href="@(Routes.To("expert.reviews"))" class="m-link">All @(Model.Reviews.Count()) @(Helpers.Plural("review", Model.Reviews.Count())) <i class="bi bi-arrow-right"></i></a></div></div>
+  <div class="dcb p"><div>
+      @if (Model.Reviews.Take(3).Any())
+{
+    foreach (var review in Model.Reviews.Take(3))
+    {
+<text>
+        <div class="rev"><div class="rev-h">@await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = review.User, Box = "ava", Fallback = "av" })<div><div class="m-h4">@(review.User.FullName)</div>
+          <p class="m-small">@(review.User.City) &middot; @(Helpers.Truthy(review.ConsultationSessionId) ? (review.Session?.Type?.TypeName ?? "Consultation") : (review.Request?.Type?.TypeName ?? "Service"))</p></div>
+          <div class="rev-r">@await Html.PartialAsync("~/Views/Components/_Stars.cshtml", new StarsModel { Rating = review.Rating, Size = "" })
+          <p class="m-small">@(review.ReviewDate.Format("j F Y"))</p></div></div>
+          @if (Convert.ToString(review.Comment).Trim() != "")
+{
+<text><p class="m-body">@(review.Comment)</p></text>
+}</div>
+      </text>
+    }
+}
+else
+{
+<text>
+        <p class="m-small">No reviews yet. Your first completed booking can bring one.</p>
+      </text>
+}
+    </div></div>
+</div>

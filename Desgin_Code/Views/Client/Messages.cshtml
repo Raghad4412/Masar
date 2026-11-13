@@ -1,0 +1,41 @@
+@model Masar.ViewModels.Client.MessagesViewModel
+@{
+    Layout = "~/Views/Shared/_App.cshtml";
+    ViewData["navItem"] = "bookings";
+    ViewData["title"] = "Messages - Masar";
+}
+@section Crumb {
+
+  <span>Home</span><i class="bi bi-chevron-right"></i><span class="cur">Messages</span>
+
+}
+
+<div class="wrap narrow">
+  <div class="page-h">
+    <div><h1 class="m-h1">Messages</h1><p class="m-body">Every conversation lives inside one booking or one service</p></div>
+  </div>
+  <div class="card pad">
+    @if (Model.Threads.Any())
+{
+    foreach (var thread in Model.Threads)
+    {
+<text>
+      <div class="sline" style="padding:14px 0">
+        @await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = thread.Who, Box = "ava ava-sm", Fallback = "av av-sm", Name = thread.Title })
+        <div><b>@(thread.Who?.FullName ?? "Masar")</b>
+          <p class="m-small">@(thread.Title) &middot; @(thread.Model.Reference) &middot; @(thread.Count) @(Helpers.Plural("message", thread.Count))</p></div>
+        <span class="d-flex align-items-center gap-3"><span class="m-small">@(Helpers.ParseDate(thread.Last).Format("j M, H:i"))</span>
+          <a class="m-link" href="@(thread.Url)">Open</a></span>
+      </div>
+    </text>
+    }
+}
+else
+{
+<text>
+      <p class="m-body">You have no chats yet. A chat opens as soon as you book a consultation or accept
+        a proposal. <a class="m-link" href="@(Routes.To("consultation"))">Find a consultant</a></p>
+    </text>
+}
+  </div>
+</div>

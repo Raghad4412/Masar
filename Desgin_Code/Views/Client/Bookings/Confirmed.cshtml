@@ -1,0 +1,51 @@
+@model Masar.ViewModels.Client.BookingViewModel
+@{
+    Layout = "~/Views/Shared/_App.cshtml";
+    ViewData["navItem"] = "bookings";
+    ViewData["pageClass"] = "center-page";
+    ViewData["title"] = "Your consultation is confirmed - Masar";
+}
+<div class="statebox wide">
+  <div class="bigicon ok"><i class="bi bi-check-circle"></i></div>
+  <h1 class="m-h1" style="margin-top:24px">Your consultation is confirmed</h1>
+  <p class="m-body" style="margin-top:12px">We sent the details to @(AuthUser.Email) and added the
+    session to your bookings.</p>
+  <div class="refbox">Booking reference <b>@(Model.Session.Reference)</b></div>
+
+  <div class="card pad conf">
+    <div class="conf-row">
+      @await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = Model.User, Box = "ava ava-lg", Fallback = "av av-lg" })
+      <div><div class="m-h3">@(Model.User.FullName)</div><p class="m-small">@(Model.Expert.Title) &middot; @(Model.User.City)@if (Helpers.Truthy(Model.ReplyHours))
+{
+<text> &middot; Replies within @(Model.ReplyHours) @(Helpers.Plural("hour", Model.ReplyHours))</text>
+}</p></div>
+      <span class="m-chip chip-ok"><i class="bi bi-patch-check-fill"></i> Verified</span>
+    </div>
+    <div class="conf-grid">
+      <div><span class="m-small">Date and time</span><b>@(Model.Session.StartsAt().Format("l j M Y")) &middot; @(Model.Session.SlotLabel) - @(Helpers.Substr(Model.Session.TimeString("End_Time"), 0, 5))</b></div>
+      <div><span class="m-small">Type</span><b>@(Model.Type?.TypeName) &middot; @(Config.Masar.SessionMinutes) min</b></div>
+      <div><span class="m-small">Topic</span><b>@(Model.Session.SessionTopic)</b></div>
+      <div><span class="m-small">Paid</span><b>@(Helpers.NumberFormat(Convert.ToDouble((Model.Payment?.Amount ?? Model.Total)), 2)) SAR &middot; @(Model.Payment?.PaymentMethod)</b></div>
+    </div>
+    <div class="conf-cta">
+      <a href="@(Routes.To("bookings.ics", new { session = Model.Session.ConsultationSessionId }))" class="m-btn m-btn-outline"><i class="bi bi-calendar-plus"></i> Add to calendar</a>
+      @if (Helpers.Truthy(Model.Payment) && Model.Payment.HasInvoice())
+{
+<text>
+        <a href="@(Routes.To("invoices.print", new { payment = Model.Payment.PaymentId }))" class="m-btn m-btn-outline" target="_blank" rel="noopener"><i class="bi bi-receipt"></i> View invoice</a>
+      </text>
+}
+      <a href="@(Routes.To("bookings.show", new { session = Model.Session.ConsultationSessionId }))" class="m-btn m-btn-primary"><i class="bi bi-chat-dots"></i> Message @(Model.User.FirstName)</a>
+    </div>
+  </div>
+
+  <div class="next">
+    <div class="m-h4" style="margin-bottom:16px">What happens next</div>
+    <div class="nsteps">
+      <div><span class="n">1</span><b>@(Model.User.FirstName) prepares</b><p class="m-small">She reads your topic and files before the session.</p></div>
+      <div><span class="n">2</span><b>You meet online</b><p class="m-small">Join from My Bookings 5 minutes before the time.</p></div>
+      <div><span class="n">3</span><b>You receive the summary</b><p class="m-small">A written summary is added to your booking within 24 hours.</p></div>
+      <div><span class="n">4</span><b>You rate the session</b><p class="m-small">Your review helps other founders choose.</p></div>
+    </div>
+  </div>
+</div>

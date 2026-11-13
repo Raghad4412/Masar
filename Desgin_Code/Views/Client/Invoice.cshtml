@@ -1,0 +1,22 @@
+@model Masar.ViewModels.Client.InvoiceViewModel
+@{
+    Layout = "~/Views/Shared/_App.cshtml";
+    ViewData["navItem"] = "bookings";
+    ViewData["title"] = Model.Invoice.Number + " - Masar";
+}
+@section Crumb {
+
+  <span>Home</span><i class="bi bi-chevron-right"></i><a href="@(Routes.To("bookings.index"))">My Bookings</a><i class="bi bi-chevron-right"></i><span>@(Model.Reference)</span><i class="bi bi-chevron-right"></i><span class="cur">Invoice</span>
+
+}
+
+<div class="wrap narrow">
+  <div class="page-h">
+    <div><h1 class="m-h1">Invoice</h1><p class="m-body">Issued @(Model.Invoice.Date.Format("j F Y"))</p></div>
+    <div class="d-flex gap-3">
+      <a class="m-btn m-btn-outline" href="@(Routes.To("invoices.print", new { payment = Model.Payment.PaymentId }))" target="_blank" rel="noopener"><i class="bi bi-printer"></i> Print</a>
+      <a class="m-btn m-btn-primary" href="@(Routes.To("invoices.print", new { payment = Model.Payment.PaymentId }))" target="_blank" rel="noopener"><i class="bi bi-download"></i> Download PDF</a>
+    </div>
+  </div>
+  @await Html.PartialAsync("~/Views/Partials/_InvoiceCard.cshtml", null, new ViewDataDictionary(ViewData) { ["invoice"] = Model.Invoice, ["payment"] = Model.Payment, ["client"] = Model.Client, ["reference"] = Model.Reference, ["description"] = Model.Description, ["expertName"] = Model.ExpertName, ["serviceDate"] = Model.ServiceDate })
+</div>

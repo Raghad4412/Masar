@@ -1,0 +1,135 @@
+@model Masar.ViewModels.ExpertArea.ExpertServiceShowViewModel
+@{
+    Layout = "~/Views/Shared/_Dash.cshtml";
+    ViewData["panel"] = "expert";
+    ViewData["dmeCaption"] = Model.DmeCaption;
+    ViewData["title"] = Model.Request.Title + " - Masar";
+    ViewData["dtitle"] = "My Services";
+    ViewData["dcrumb"] = Model.Request.Reference;
+}
+<div class="d2">
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">@(Model.Request.Title)</h3><p class="m-small">@(Model.Request.Reference) &middot; @(Model.Client?.FullName), @(Model.Client?.City)</p></div><div class="sp">@await Html.PartialAsync("~/Views/Components/_Status.cshtml", new StatusModel { Kind = "request", Value = Model.Request.Status })</div></div>
+  <div class="dcb p">
+    <div class="pc-nums" style="grid-template-columns:repeat(4,1fr)">
+      <div><span class="m-small">Agreed price</span><b>@(Helpers.Sar(Model.Request.AgreedPrice, 0)) SAR</b></div>
+      <div><span class="m-small">Deadline</span><b>@(Model.Request.Deadline.Format("j M Y"))</b></div>
+      <div><span class="m-small">Released to you</span><b>@(Helpers.Sar(Model.Released, 0)) SAR</b></div>
+      <div><span class="m-small">Still in escrow</span><b>@(Helpers.Sar(Model.Escrow, 0)) SAR</b></div>
+    </div>
+    <div class="prog"><span class="m-small">Stage @(Model.DoneSteps) of @(Model.Timeline.Count())</span>
+      <span class="pbar"><span style="width:@(Model.Progress)%"></span></span>
+      <b style="font-family:var(--ff-head);color:var(--teal)">@(Model.Progress)%</b></div>
+    <div class="mile">
+      @foreach (var (i, step) in Model.Timeline.Pairs())
+{
+<text>
+        <div><span class="n">@if (Helpers.Truthy(step.Done))
+{
+<text><i class="bi bi-check-lg"></i></text>
+}
+else
+{
+<text>@(i + 1)</text>
+}</span>
+          <div><b>@(step.Label)</b><p class="m-small">@(Helpers.Truthy(step.At) ? step.At.Format("j M Y") : "not yet")</p></div></div>
+      </text>
+}
+    </div>
+    @if (Model.Request.Status == "In Progress")
+{
+<text>
+      <form method="POST" action="@(Routes.To("expert.service.deliver", new { serviceRequest = Model.Request.ServiceRequestId }))" enctype="multipart/form-data" style="margin-top:18px">
+        @Html.AntiForgeryToken()
+        <label class="upbox ms-drop">
+          <input class="ms-file" type="file" name="files[]" multiple accept=".jpg,.jpeg,.png,.pdf,.zip,.doc,.docx">
+          <span class="ic"><i class="bi bi-cloud-arrow-up"></i></span>
+          <b>Drop your deliverables here or browse</b>
+          <p class="m-small">Images, PDF, Word or ZIP, up to 25 MB each.</p>
+        </label>
+        <div class="files" style="margin-top:12px" data-ms-files="files[]"></div>
+        @if (Errors.GetBag("default").Has("files"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle-fill"></i> @(Errors.GetBag("default").First("files"))</p></text>
+}
+        @if (Errors.GetBag("default").Has("files.*"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle-fill"></i> @(Errors.GetBag("default").First("files.*"))</p></text>
+}
+        <button type="submit" class="m-btn m-btn-primary" style="margin-top:14px"><i class="bi bi-upload"></i> Deliver these files</button>
+      </form>
+    </text>
+}
+  </div>
+</div>
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">Files and payment</h3><p class="m-small">Everything attached to @(Model.Request.Reference)</p></div></div>
+  <div class="dcb p"><div class="pdocs">
+      @if (Helpers.Merge(Model.Delivered, Model.References).Any())
+{
+    foreach (var file in Helpers.Merge(Model.Delivered, Model.References))
+    {
+<text>
+        <a class="pdoc" href="@(Routes.Asset(file.Path))"><i class="bi bi-file-earmark-text f"></i>
+          <div><b>@(file.Name)</b><span class="m-small">@(FileService.Size(file.Size)) &middot; @(DateTimeOffset.FromUnixTimeSeconds(file.Date).LocalDateTime.Format("j M Y"))</span></div>
+          <i class="bi bi-download" style="color:#62876E"></i></a>
+      </text>
+    }
+}
+else
+{
+<text>
+        <p class="m-small">No files yet.</p>
+      </text>
+}
+    </div>
+    <div class="milestone-pay">
+      <b style="font-family:var(--ff-head);font-size:14.5px">How you get paid</b>
+      <div class="relrow"><span class="rdot @(Helpers.Truthy(Model.Payment) ? "on" : "")"></span><div><b>@(Helpers.Sar(Helpers.MasarTotal(Model.Request.AgreedPrice), 0)) SAR paid by the client</b>
+        <p class="m-small">@(Helpers.Truthy(Model.Payment) ? "Held by Masar since " + Model.Payment.PaymentDate.Format("j M Y") : "Waiting for the payment")</p></div></div>
+      <div class="relrow"><span class="rdot @(Model.Released > 0 ? "on" : "")"></span><div><b>@(Helpers.Sar(Helpers.MasarPayout(Model.Request.AgreedPrice), 0)) SAR to you</b>
+        <p class="m-small">@(Model.Released > 0 ? "Released on completion" : "Released when the client marks the service completed")</p></div></div>
+    </div></div>
+</div>
+</div>
+<div class="dcard" id="messages">
+  <div class="dch"><div><h3 class="m-h3">Messages</h3><p class="m-small">Inside this service</p></div></div>
+  <div class="dcb p">
+    <div class="chat">
+      @if (Model.Messages.Any())
+{
+    foreach (var message in Model.Messages)
+    {
+<text>
+        @{
+    var mine = message.SenderUserId == AuthUser?.UserId;
+}
+        <div class="msg @(Helpers.Truthy(mine) ? "me" : "them")">@if (!(Helpers.Truthy(mine)))
+{
+<text>@await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = message.Sender, Box = "ava ava-sm", Fallback = "av av-sm" })</text>
+}
+          <div><p>@(message.MessageText)</p>
+          <span class="t">@(Helpers.Truthy(mine) ? "You" : message.Sender.FirstName) &middot; @(message.SentDate.Format("j M, H:i"))</span></div></div>
+      </text>
+    }
+}
+else
+{
+<text>
+        <p class="m-small">No messages yet. Write the first one below.</p>
+      </text>
+}
+    </div>
+    <form class="chatbar" method="POST" action="@(Routes.To("expert.service.message", new { serviceRequest = Model.Request.ServiceRequestId }))">
+      @Html.AntiForgeryToken()
+      <div class="m-input @Html.Raw((Errors.GetBag("default").Has("Message_Text") ? " err " : ""))">
+        <input name="Message_Text" type="text" required maxlength="2000" placeholder="Write a message…">
+      </div>
+      <button type="submit" class="m-btn m-btn-primary"><i class="bi bi-send"></i></button>
+    </form>
+    @if (Errors.GetBag("default").Has("Message_Text"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle-fill"></i> @(Errors.GetBag("default").First("Message_Text"))</p></text>
+}
+  </div>
+</div>

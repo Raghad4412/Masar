@@ -1,0 +1,46 @@
+@model Masar.ViewModels.Auth.ResetViewModel
+@{
+    Layout = "~/Views/Shared/_Auth.cshtml";
+    ViewData["title"] = "Choose a new password - Masar";
+}
+@await Html.PartialAsync("~/Views/Partials/_AuthTop.cshtml")
+<div class="m-center">
+  <img class="m-center-img" src="@(Routes.Asset("img/auth-team.jpg"))" alt="">
+  <div class="m-center-veil"></div>
+  
+  <form class="m-card m-card-pad" style="width:560px" method="POST" action="@(Http.FullUrl())">
+    @Html.AntiForgeryToken()
+    <div class="m-icon-xl" style="margin-bottom:28px"><i class="bi bi-shield-lock"></i></div>
+    <h1 class="m-h1">Choose a new password</h1>
+    <p class="m-body" style="margin:14px 0 30px">Pick a password you do not use anywhere else.</p>
+
+    <div class="m-fg">
+      <label class="m-label" for="Password">New password</label>
+      <div class="m-input @Html.Raw((Errors.GetBag("default").Has("Password") ? " err " : ""))">
+        <input id="Password" name="Password" type="password" required minlength="8" maxlength="64"
+               autocomplete="new-password" pattern="^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9]).{8,64}$"
+               data-ms-password="pw-hint" placeholder="Your new password">
+        <i class="bi bi-eye-slash" style="color:var(--teal)"></i>
+      </div>
+      <div class="m-bars"><span></span><span></span><span></span><span></span></div>
+      @if (Errors.GetBag("default").Has("Password"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle"></i> @(Errors.GetBag("default").First("Password"))</p></text>
+}
+      <p class="m-help" id="pw-hint">Strong, 12 characters, letters and numbers.</p>
+    </div>
+    <div class="m-fg">
+      <label class="m-label" for="Password_confirmation">Confirm new password</label>
+      <div class="m-input">
+        <input id="Password_confirmation" name="Password_confirmation" type="password" required minlength="8"
+               maxlength="64" autocomplete="new-password" placeholder="Repeat your new password">
+      </div>
+    </div>
+    <div style="background:var(--mint-50);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;margin:6px 0 26px">
+      <p class="m-small"><i class="bi bi-circle" data-ms-rule="len" style="color:var(--mint-300)"></i> At least 8 characters &nbsp;
+        <i class="bi bi-circle" data-ms-rule="num" style="color:var(--mint-300)"></i> One number &nbsp;
+        <i class="bi bi-circle" data-ms-rule="cap" style="color:var(--mint-300)"></i> One capital letter</p>
+    </div>
+    <button type="submit" class="m-btn m-btn-primary m-btn-block">Save the new password</button>
+  </form>
+</div>

@@ -1,0 +1,32 @@
+@model object
+@{
+    Layout = "~/Views/Shared/_Auth.cshtml";
+    ViewData["title"] = "Forgot your password? - Masar";
+}
+@await Html.PartialAsync("~/Views/Partials/_AuthTop.cshtml")
+<div class="m-center">
+  <img class="m-center-img" src="@(Routes.Asset("img/auth-team.jpg"))" alt="">
+  <div class="m-center-veil"></div>
+  <form class="m-card m-card-pad" style="width:560px" method="POST" action="@(Routes.To("password.email"))">
+    @Html.AntiForgeryToken()
+    <div class="m-icon-xl" style="margin-bottom:28px"><i class="bi bi-key"></i></div>
+    <h1 class="m-h1">Forgot your password?</h1>
+    <p class="m-body" style="margin:14px 0 30px">Enter the email you registered with and we will send you a
+      secure link to choose a new password.</p>
+    <div class="m-fg">
+      <label class="m-label" for="Email">Email address</label>
+      <div class="m-input @Html.Raw((Errors.GetBag("default").Has("Email") ? " err " : ""))">
+        <input id="Email" name="Email" type="email" required maxlength="150" autocomplete="email"
+               placeholder="name@@example.com" value="@(Old("Email"))">
+        <i class="bi bi-envelope" style="color:var(--teal)"></i>
+      </div>
+      @if (Errors.GetBag("default").Has("Email"))
+{
+<text><p class="m-err"><i class="bi bi-exclamation-circle"></i> @(Errors.GetBag("default").First("Email"))</p></text>
+}
+      <p class="m-help">The link stays valid for @(Config.Masar.ResetMinutes) minutes.</p>
+    </div>
+    <button type="submit" class="m-btn m-btn-primary m-btn-block" style="margin-top:10px">Send the reset link</button>
+    <p class="m-small" style="text-align:center;margin-top:26px"><a class="m-link" href="@(Routes.To("login"))"><i class="bi bi-arrow-left"></i> Back to log in</a></p>
+  </form>
+</div>

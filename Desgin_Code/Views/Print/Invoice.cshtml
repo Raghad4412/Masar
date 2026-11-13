@@ -1,0 +1,19 @@
+@model Masar.ViewModels.Client.InvoiceViewModel
+@{
+    Layout = "~/Views/Shared/_Print.cshtml";
+    ViewData["title"] = Model.Invoice.Number + " - Masar";
+    ViewData["doc-label"] = "Tax invoice " + Model.Invoice.Number;
+}
+<div class="ms-print-head">
+  <div>
+    <h1 class="m-h1">Tax invoice</h1>
+    <p class="m-body">@(Model.Invoice.Number) &middot; issued @(Model.Invoice.Date.Format("j F Y"))</p>
+  </div>
+  @await Html.PartialAsync("~/Views/Components/_Status.cshtml", new StatusModel { Kind = "payment", Value = Model.Payment.PaymentStatus })
+</div>
+
+@await Html.PartialAsync("~/Views/Partials/_InvoiceCard.cshtml", null, new ViewDataDictionary(ViewData) { ["invoice"] = Model.Invoice, ["payment"] = Model.Payment, ["client"] = Model.Client, ["reference"] = Model.Reference, ["description"] = Model.Description, ["expertName"] = Model.ExpertName, ["serviceDate"] = Model.ServiceDate })
+
+<p class="ms-print-note">This invoice is produced from payment @(Model.Payment.Reference) on
+  @(Clock.Now.Format("j F Y \\a\\t H:i")). Masar keeps no separate invoice record: the figures above are
+  the payment itself, so a reprint always matches what was charged.</p>

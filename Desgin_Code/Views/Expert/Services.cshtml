@@ -1,0 +1,175 @@
+@model Masar.ViewModels.ExpertArea.ExpertServicesViewModel
+@{
+    Layout = "~/Views/Shared/_Dash.cshtml";
+    ViewData["panel"] = "expert";
+    ViewData["dmeCaption"] = Model.DmeCaption;
+    ViewData["title"] = "My Services - Masar";
+    ViewData["dtitle"] = "My Services";
+    ViewData["dcrumb"] = "My Services";
+}
+@{
+    Func<dynamic, dynamic, dynamic> share = (n, of) => of > 0 ? Helpers.Round(n / of * 100, 1) : 0;
+}
+
+<div class="kpis">
+  <div class="kpi">
+    <div class="kpi-t"><span class="kpi-ic "><i class="bi bi-briefcase"></i></span>
+      <span class="kpi-l">Active services</span></div>
+    <div class="kpi-v">@(Model.Tiles.Active)</div>
+    <div class="ms-kpi-ring">@Html.Raw(C.MiniRing(share(Model.Tiles.Active, Model.Tiles.Active + Model.Tiles.Completed), C.TEAL))
+      <span class="m-small">of everything you have taken on is still open</span></div>
+    <p class="m-small" style="margin-top:10px">@(Helpers.Sar(Model.Tiles.Value, 0)) SAR of work in progress</p>
+  </div>
+  <div class="kpi">
+    <div class="kpi-t"><span class="kpi-ic gold"><i class="bi bi-exclamation-triangle"></i></span>
+      <span class="kpi-l">Due this week</span></div>
+    <div class="kpi-v">@(Model.Tiles.DueThisWeek)</div>
+    <div class="ms-kpi-ring">@Html.Raw(C.MiniRing(share(Model.Tiles.DueThisWeek, Model.Tiles.Active), C.AMBER))
+      <span class="m-small">of your open services are due inside a week</span></div>
+    <p class="m-small" style="margin-top:10px">Delivery dates within the next seven days</p>
+  </div>
+  <div class="kpi">
+    <div class="kpi-t"><span class="kpi-ic blue"><i class="bi bi-hourglass-split"></i></span>
+      <span class="kpi-l">Held in escrow</span></div>
+    <div class="kpi-v">@(Helpers.Sar(Model.Tiles.InEscrow, 0)) <span>SAR</span></div>
+    <div class="ms-kpi-ring">@Html.Raw(C.MiniRing(share(Model.Tiles.InEscrow, Helpers.MasarPayout(Model.Tiles.Value)), C.INFO))
+      <span class="m-small">of the payout on your open work is already held for you</span></div>
+    <p class="m-small" style="margin-top:10px">Released when each client marks the work completed</p>
+  </div>
+  <div class="kpi">
+    <div class="kpi-t"><span class="kpi-ic green"><i class="bi bi-check2-circle"></i></span>
+      <span class="kpi-l">Completed in total</span></div>
+    <div class="kpi-v">@(Model.Tiles.Completed)</div>
+    <div class="ms-kpi-ring">@Html.Raw(C.MiniRing(Model.Tiles.OnTime, C.SAGE))
+      <span class="m-small">delivered on or before the deadline</span></div>
+    <p class="m-small" style="margin-top:10px">@(Model.Tiles.OnTime)% delivered on or before the deadline</p>
+  </div>
+</div>
+@if (Helpers.Truthy(Model.Current) && Helpers.Truthy(Model.CurrentPayload))
+{
+<text>
+  @{
+    var cp = Model.CurrentPayload!;
+    var expert = cp.Expert;
+    var request = cp.Request;
+    var proposal = cp.Proposal;
+    var client = cp.Client;
+    var payment = cp.Payment;
+    var released = cp.Released;
+    var escrow = cp.Escrow;
+    var delivered = cp.Delivered;
+    var references = cp.References;
+    var timeline = cp.Timeline;
+    var progress = cp.Progress;
+    var doneSteps = cp.DoneSteps;
+    var messages = cp.Messages;
+}
+  <div class="d2">
+  <div class="dcard">
+    <div class="dch"><div><h3 class="m-h3">Current service</h3><p class="m-small">The one closest to its deadline</p></div><div class="sp"><span class="m-chip chip-ok"><i class="bi bi-shield-check"></i> Payment held by Masar</span></div></div>
+    <div class="dcb p"><div class="pc-head" style="align-items:center">
+        @await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = client, Box = "ava ava-lg", Fallback = "av av-lg" })
+        <div><div class="m-h4" style="font-size:19px">@(request.Title)</div>
+          <p class="m-small" style="margin-top:4px">@(client?.FullName), @(client?.City) &middot; @(request.Reference)@if (Helpers.Truthy(payment))
+{
+<text> &middot; accepted @(payment.PaymentDate.Format("j F Y"))</text>
+}</p></div>
+        @await Html.PartialAsync("~/Views/Components/_Status.cshtml", new StatusModel { Kind = "request", Value = request.Status })
+      </div>
+      <div class="pc-nums" style="grid-template-columns:repeat(4,1fr)">
+        <div><span class="m-small">Agreed price</span><b>@(Helpers.Sar(request.AgreedPrice, 0)) SAR</b></div>
+        <div><span class="m-small">Deadline</span><b>@(request.Deadline.Format("j M Y"))</b></div>
+        <div><span class="m-small">Released to you</span><b>@(Helpers.Sar(released, 0)) SAR</b></div>
+        <div><span class="m-small">Still in escrow</span><b>@(Helpers.Sar(escrow, 0)) SAR</b></div>
+      </div>
+      <div class="prog"><span class="m-small">Stage @(doneSteps) of @(timeline.Count())</span>
+        <span class="pbar"><span style="width:@(progress)%"></span></span>
+        <b style="font-family:var(--ff-head);color:var(--teal)">@(progress)%</b></div>
+      <div class="mile">
+        @foreach (var (i, step) in timeline.Pairs())
+{
+<text>
+          <div><span class="n">@if (Helpers.Truthy(step.Done))
+{
+<text><i class="bi bi-check-lg"></i></text>
+}
+else
+{
+<text>@(i + 1)</text>
+}</span>
+            <div><b>@(step.Label)</b><p class="m-small">@(Helpers.Truthy(step.At) ? step.At.Format("j M Y") : "not yet")</p></div></div>
+        </text>
+}
+      </div>
+      <div class="pc-foot">
+        <a href="@(Routes.To("expert.service.show", new { serviceRequest = request.ServiceRequestId }))" class="m-btn m-btn-primary"><i class="bi bi-upload"></i> Upload deliverable</a>
+        <a href="@(Routes.To("expert.service.show", new { serviceRequest = request.ServiceRequestId }))#messages" class="m-btn m-btn-outline"><i class="bi bi-chat-dots"></i> Message @(client?.FirstName)</a>
+        <a href="@(Routes.To("expert.service.show", new { serviceRequest = request.ServiceRequestId }))" class="m-btn m-btn-outline"><i class="bi bi-folder2-open"></i> Open workspace</a>
+      </div></div>
+  </div>
+  <div class="dcard">
+    <div class="dch"><div><h3 class="m-h3">Files and payment</h3><p class="m-small">Everything attached to @(request.Reference)</p></div></div>
+    <div class="dcb p"><div class="pdocs">
+        @if (Helpers.Merge(delivered, references).Any())
+{
+    foreach (var file in Helpers.Merge(delivered, references))
+    {
+<text>
+          <a class="pdoc" href="@(Routes.Asset(file.Path))"><i class="bi bi-file-earmark-text f"></i>
+            <div><b>@(file.Name)</b><span class="m-small">@(FileService.Size(file.Size)) &middot; @(DateTimeOffset.FromUnixTimeSeconds(file.Date).LocalDateTime.Format("j M Y"))</span></div>
+            <i class="bi bi-download" style="color:#62876E"></i></a>
+        </text>
+    }
+}
+else
+{
+<text>
+          <p class="m-small">No files yet. Upload your deliverables from the workspace.</p>
+        </text>
+}
+      </div>
+      <div class="milestone-pay">
+        <b style="font-family:var(--ff-head);font-size:14.5px">How you get paid</b>
+        <div class="relrow"><span class="rdot @(Helpers.Truthy(payment) ? "on" : "")"></span><div><b>@(Helpers.Sar(Helpers.MasarTotal(request.AgreedPrice), 0)) SAR paid by the client</b>
+          <p class="m-small">@(Helpers.Truthy(payment) ? "Held by Masar since " + payment.PaymentDate.Format("j M Y") : "Waiting for the payment")</p></div></div>
+        <div class="relrow"><span class="rdot @(released > 0 ? "on" : "")"></span><div><b>@(Helpers.Sar(Helpers.MasarPayout(request.AgreedPrice), 0)) SAR to you</b>
+          <p class="m-small">@(released > 0 ? "Released on completion" : "Released when the client marks the service completed")</p></div></div>
+        <div class="relrow"><span class="rdot"></span><div><b>@(Helpers.Sar(Helpers.MasarCommission(request.AgreedPrice), 0)) SAR Masar commission</b>
+          <p class="m-small">@(Helpers.ToInt32((Config.Masar.Commission * 100)))% of the agreed price</p></div></div>
+      </div></div>
+  </div>
+  </div>
+</text>
+}
+<div class="dcard">
+  <div class="dch"><div><h3 class="m-h3">All my services</h3><p class="m-small">Active first, then the ones you finished</p></div><div class="sp"><span class="seg">
+    <a href="@(Routes.To("expert.services"))" class="@(Model.Tab == "active" ? "on" : "")">Active</a>
+    <a href="@(Routes.To("expert.services", new { tab = "completed" }))" class="@(Model.Tab == "completed" ? "on" : "")">Completed</a>
+    <a href="@(Routes.To("expert.services", new { tab = "cancelled" }))" class="@(Model.Tab == "cancelled" ? "on" : "")">Cancelled</a></span></div></div>
+  <div class="dcb t"><div class="md-table-scroll"><table class="dt2">
+    <tr><th>Service</th><th>Client</th><th class="r">Value</th><th>Progress</th><th>Deadline</th><th>Status</th><th></th></tr>
+    @if (Model.Rows.Any())
+{
+    foreach (var row in Model.Rows)
+    {
+<text>
+      <tr>
+        <td><b>@(row.Title)</b><br><span class="m-small">@(row.Reference)</span></td>
+        <td><div class="who">@await Html.PartialAsync("~/Views/Components/_Avatar.cshtml", new AvatarModel { User = row.Client?.User, Box = "ava ava-sm", Fallback = "av av-sm" })<span>@(row.Client?.User?.FullName)</span></div></td>
+        <td class="r"><b>@(Helpers.Sar(row.AgreedPrice, 0)) SAR</b></td>
+        <td><div class="tprog"><div class="tr"><i style="width:@(row.Status == "Completed" ? 100 : 50)%"></i></div><b>@(row.Status == "Completed" ? 100 : 50)%</b></div></td>
+        <td class="nw">@(row.Deadline.Format("j M Y"))</td>
+        <td>@await Html.PartialAsync("~/Views/Components/_Status.cshtml", new StatusModel { Kind = "request", Value = row.Status })</td>
+        <td class="r"><a class="m-link" href="@(Routes.To("expert.service.show", new { serviceRequest = row.ServiceRequestId }))">Open</a></td>
+      </tr>
+    </text>
+    }
+}
+else
+{
+<text>
+      <tr><td colspan="7"><p class="m-body" style="padding:18px 0">You have no services in this tab.</p></td></tr>
+    </text>
+}
+  </table></div></div>
+</div>

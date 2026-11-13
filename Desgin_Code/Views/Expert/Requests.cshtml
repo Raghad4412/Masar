@@ -1,0 +1,97 @@
+@model Masar.ViewModels.ExpertArea.ExpertRequestsViewModel
+@{
+    Layout = "~/Views/Shared/_Dash.cshtml";
+    ViewData["panel"] = "expert";
+    ViewData["dmeCaption"] = Model.DmeCaption;
+    ViewData["mainClass"] = "page";
+    ViewData["title"] = "Open Requests - Masar";
+    ViewData["dtitle"] = "Open Requests";
+    ViewData["dcrumb"] = "Open Requests";
+}
+<div class="wrap">
+  <div class="page-h">
+    <div><h1 class="m-h1">Requests that match your work</h1>
+      <p class="m-body">Requests that match your specialization and city</p></div>
+    <form class="searchline" method="GET" action="@(Routes.To("expert.requests"))">
+      <div class="m-input" style="width:200px">
+        <select name="field" onchange="this.form.submit()" style="flex:1;min-width:0;border:0;outline:0;background:transparent;font:inherit;color:inherit;padding:0;appearance:none;cursor:pointer">
+          <option value="">All my fields</option>
+          @foreach (var f in Model.Fields)
+{
+<text><option value="@(f)" @(Model.Field == f ? "selected" : "")>@(f)</option></text>
+}
+        </select>
+        <i class="bi bi-chevron-down"></i>
+      </div>
+      <div class="m-input" style="width:200px">
+        <select name="sort" onchange="this.form.submit()" style="flex:1;min-width:0;border:0;outline:0;background:transparent;font:inherit;color:inherit;padding:0;appearance:none;cursor:pointer">
+          <option value="" @(!Helpers.Truthy(Model.Sort) ? "selected" : "")>Sort: Newest</option>
+          <option value="budget" @(Model.Sort == "budget" ? "selected" : "")>Sort: Budget, highest</option>
+          <option value="deadline" @(Model.Sort == "deadline" ? "selected" : "")>Sort: Deadline, soonest</option>
+        </select>
+        <i class="bi bi-chevron-down"></i>
+      </div>
+    </form>
+  </div>
+  <div class="statrow">
+    <div class="stat"><span class="m-small">Open requests</span><b>@(Model.Tiles.Open)</b></div>
+    <div class="stat"><span class="m-small">Proposals sent</span><b>@(Model.Tiles.Sent)</b></div>
+    <div class="stat"><span class="m-small">Accepted</span><b>@(Model.Tiles.Accepted)</b></div>
+    <div class="stat"><span class="m-small">Win rate</span><b>@(Model.Tiles.Win)%</b></div>
+  </div>
+  <div class="card" style="padding:10px">
+    @if (Model.Rows.Any())
+{
+    foreach (var loop in Model.Rows.Loop())
+    {
+<text>@{ var row = loop.Item; }
+      @{
+    var alreadySent = Model.Sent.Contains(row.ServiceRequestId);
+}
+      <div class="reqrow @(Helpers.Truthy(loop.First) && !Helpers.Truthy(alreadySent) ? "hot" : "")">
+        <div class="rq-main">
+          <div class="d-flex align-items-center gap-2">
+            <h4 class="m-h4">@(row.Title)</h4>@if (!Helpers.Truthy(alreadySent) && Helpers.Truthy(loop.First))
+{
+<text><span class="m-chip chip-new">New</span></text>
+}
+          </div>
+          <p class="m-small">@(row.Client?.User?.FullName), @(row.Client?.User?.City) &middot; @(row.RequestReference) &middot; due in @(Math.Max(0, Clock.Now.StartOfDay().DiffInDays(row.Deadline, false))) days</p>
+          <div class="ec-meta" style="margin-top:10px">
+            <span><i class="bi bi-cash-coin"></i> @(row.BudgetDisplay)</span>
+            <span><i class="bi bi-calendar3"></i> due @(row.Deadline.Format("j M Y"))</span>
+            <span><i class="bi bi-file-earmark-text"></i> @(row.Proposals.Where(x => x.ProposalStatus == "Waiting").Count()) proposals</span>
+          </div>
+        </div>
+        <div class="rq-cta">
+          @if (Helpers.Truthy(alreadySent))
+{
+<text>
+            <a href="@(Routes.To("expert.proposal.create", new { serviceRequest = row.ServiceRequestId }))" class="m-btn m-btn-outline">View request</a>
+          </text>
+}
+else
+{
+<text>
+            <a href="@(Routes.To("expert.proposal.create", new { serviceRequest = row.ServiceRequestId }))" class="m-btn m-btn-primary">Send a proposal</a>
+          </text>
+}
+        </div>
+      </div>
+    </text>
+    }
+}
+else
+{
+<text>
+      <div class="empty" style="padding:48px 36px">
+        @await Html.PartialAsync("~/Views/Svg/_EmptyRequests.cshtml")
+        <h3 class="m-h3" style="margin-top:20px">No open requests right now</h3>
+        <p class="m-body" style="max-width:430px;margin:10px auto 0">When a client posts a request in
+          @(string.Join(" or ", Model.Fields)), it appears here straight away.</p>
+      </div>
+    </text>
+}
+    @await Html.PartialAsync("~/Views/Components/_Pager.cshtml", new PagerModel { Pager = Model.Pager, Unit = "request" })
+  </div>
+</div>
